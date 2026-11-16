@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Эрудит: Битва Умов</title>
+    <!-- Подключение Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключение шрифта Rubik и Inter для современного молодежного стиля -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rubik:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Подключение иконок FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Библиотека Tone.js для генерации звуковых эффектов без внешних файлов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Rubik', sans-serif;
+        }
+        
+        /* Анимации */
+        @keyframes pulse-fast {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+        .animate-pulse-fast {
+            animation: pulse-fast 0.8s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes pop-in {
+            0% { opacity: 0; transform: scale(0.9) translateY(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-pop-in {
+            animation: pop-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Стеклянный эффект карточки */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Кастомные кнопки вариантов ответа */
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(99, 102, 241, 0.2);
+        }
+        .option-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center pt-20 pb-4 px-3 sm:pt-20 sm:pb-6 sm:px-6 text-slate-800 select-none">
+
+    <!-- Фиксированная фирменная эмблема «Э» и подпись «Алтын түйүн» в левом верхнем углу экрана -->
+    <div onclick="goToMenu()" class="fixed top-4 left-4 z-[1000] flex items-center gap-2.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl bg-white/95 backdrop-blur-md shadow-lg shadow-indigo-950/20 border border-white/80 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-200 group" title="Вернуться в главное меню">
+        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-amber-400 via-orange-500 to-pink-600 text-white font-display font-extrabold text-lg sm:text-xl flex items-center justify-center shadow-md shadow-orange-500/30 group-hover:rotate-6 transition-transform">
+            Э
+        </div>
+        <div class="leading-tight pr-1">
+            <span class="block font-display font-extrabold text-xs sm:text-sm text-slate-900 tracking-tight">Алтын түйүн</span>
+            <span class="block text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-amber-600">Эрудит • 75 уровней</span>
+        </div>
+    </div>
+
+    <!-- Главный контейнер игры -->
+    <div id="app-container" class="w-full max-w-2xl glass-card rounded-3xl p-5 sm:p-8 relative overflow-hidden transition-all duration-300">
+        
+        <!-- Верхняя панель управления звуком -->
+        <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center gap-2 text-indigo-600 font-display font-bold text-lg sm:text-xl cursor-pointer" onclick="goToMenu()">
+                <i class="fa-solid fa-brain text-2xl text-pink-500"></i>
+                <span>Эрудит: Битва Умов</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div id="total-stars-badge" class="px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 font-display font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-star text-amber-500"></i>
+                    <span id="total-stars-count">0 / 225</span>
+                </div>
+                <button id="sound-toggle" class="p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Включить/выключить звук">
+                    <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ЭКРАН 1: СТАРТОВОЕ МЕНЮ И ВЫБОР КАТЕГОРИИ -->
+        <div id="start-screen" class="animate-pop-in">
+            <div class="text-center mb-6 sm:mb-8">
+                <span class="inline-block px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs sm:text-sm font-semibold mb-2">
+                    75 уникальных уровней • 5 миров знаний
+                </span>
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-2">
+                    Прокачай свой мозг! 🚀
+                </h1>
+                <p class="text-slate-600 text-sm sm:text-base max-w-md mx-auto">
+                    Выбери мир знаний, открывай уровни от новичка до магистра и собирай звёзды за точность и скорость!
+                </p>
+            </div>
+
+            <!-- Сетка категорий -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
+                <!-- Наука и космос -->
+                <button onclick="openLevelMap('science')" class="category-card group flex items-center justify-between p-4 rounded-2xl border-2 border-purple-100 bg-purple-50/60 hover:bg-purple-600 hover:border-purple-600 transition-all duration-200 text-left">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-xl bg-purple-600 group-hover:bg-white text-white group-hover:text-purple-600 flex items-center justify-center text-xl shadow-md transition-colors shrink-0">
+                            <i class="fa-solid fa-rocket"></i>
+                        </div>
+                        <div class="ml-3.5">
+                            <h3 class="font-display font-bold text-slate-800 group-hover:text-white text-base sm:text-lg leading-tight">Наука и космос</h3>
+                            <p class="text-xs text-slate-500 group-hover:text-purple-100 mt-0.5">Физика, биология и Вселенная</p>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0 ml-2">
+                        <span id="cat-progress-science" class="block font-display font-bold text-xs text-purple-700 group-hover:text-white">0/15</span>
+                        <span id="cat-stars-science" class="text-[11px] text-amber-500 group-hover:text-amber-200 font-semibold"><i class="fa-solid fa-star"></i> 0/45</span>
+                    </div>
+                </button>
+
+                <!-- История и цивилизации -->
+                <button onclick="openLevelMap('history')" class="category-card group flex items-center justify-between p-4 rounded-2xl border-2 border-amber-100 bg-amber-50/60 hover:bg-amber-500 hover:border-amber-500 transition-all duration-200 text-left">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-xl bg-amber-500 group-hover:bg-white text-white group-hover:text-amber-500 flex items-center justify-center text-xl shadow-md transition-colors shrink-0">
+                            <i class="fa-solid fa-landmark"></i>
+                        </div>
+                        <div class="ml-3.5">
+                            <h3 class="font-display font-bold text-slate-800 group-hover:text-white text-base sm:text-lg leading-tight">История и цивилизации</h3>
+                            <p class="text-xs text-slate-500 group-hover:text-amber-100 mt-0.5">Древний мир, открытия и эпохи</p>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0 ml-2">
+                        <span id="cat-progress-history" class="block font-display font-bold text-xs text-amber-700 group-hover:text-white">0/15</span>
+                        <span id="cat-stars-history" class="text-[11px] text-amber-500 group-hover:text-amber-100 font-semibold"><i class="fa-solid fa-star"></i> 0/45</span>
+                    </div>
+                </button>
+
+                <!-- География и природа -->
+                <button onclick="openLevelMap('geo')" class="category-card group flex items-center justify-between p-4 rounded-2xl border-2 border-emerald-100 bg-emerald-50/60 hover:bg-emerald-500 hover:border-emerald-500 transition-all duration-200 text-left">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-500 group-hover:bg-white text-white group-hover:text-emerald-500 flex items-center justify-center text-xl shadow-md transition-colors shrink-0">
+                            <i class="fa-solid fa-earth-americas"></i>
+                        </div>
+                        <div class="ml-3.5">
+                            <h3 class="font-display font-bold text-slate-800 group-hover:text-white text-base sm:text-lg leading-tight">География и природа</h3>
+                            <p class="text-xs text-slate-500 group-hover:text-emerald-100 mt-0.5">Континенты, чудеса и экосистемы</p>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0 ml-2">
+                        <span id="cat-progress-geo" class="block font-display font-bold text-xs text-emerald-700 group-hover:text-white">0/15</span>
+                        <span id="cat-stars-geo" class="text-[11px] text-amber-500 group-hover:text-amber-100 font-semibold"><i class="fa-solid fa-star"></i> 0/45</span>
+                    </div>
+                </button>
+
+                <!-- Искусство и литература -->
+                <button onclick="openLevelMap('art')" class="category-card group flex items-center justify-between p-4 rounded-2xl border-2 border-rose-100 bg-rose-50/60 hover:bg-rose-500 hover:border-rose-500 transition-all duration-200 text-left">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 rounded-xl bg-rose-500 group-hover:bg-white text-white group-hover:text-rose-500 flex items-center justify-center text-xl shadow-md transition-colors shrink-0">
+                            <i class="fa-solid fa-palette"></i>
+                        </div>
+                        <div class="ml-3.5">
+                            <h3 class="font-display font-bold text-slate-800 group-hover:text-white text-base sm:text-lg leading-tight">Искусство и литература</h3>
+                            <p class="text-xs text-slate-500 group-hover:text-rose-100 mt-0.5">Шедевры, книги, музыка и кино</p>
+                        </div>
+                    </div>
+                    <div class="text-right shrink-0 ml-2">
+                        <span id="cat-progress-art" class="block font-display font-bold text-xs text-rose-700 group-hover:text-white">0/15</span>
+                        <span id="cat-stars-art" class="text-[11px] text-amber-500 group-hover:text-amber-100 font-semibold"><i class="fa-solid fa-star"></i> 0/45</span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Кнопка МИКС (15 уникальных уровней) -->
+            <button onclick="openLevelMap('mix')" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-display font-bold text-base sm:text-lg shadow-lg shadow-indigo-500/30 transform hover:-translate-y-0.5 transition-all flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-shuffle text-xl"></i>
+                    <div class="text-left">
+                        <span class="block leading-tight">МИКС: Испытание Эрудита</span>
+                        <span class="block text-xs font-normal text-indigo-100">15 уникальных уровней на логику и кругозор</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span id="cat-progress-mix" class="block text-xs font-bold bg-white/20 px-2.5 py-0.5 rounded-full">0/15</span>
+                    <span id="cat-stars-mix" class="text-xs text-amber-200 font-semibold"><i class="fa-solid fa-star"></i> 0/45</span>
+                </div>
+            </button>
+        </div>
+
+        <!-- ЭКРАН 1.5: КАРТА УРОВНЕЙ КАТЕГОРИИ (1-15) -->
+        <div id="map-screen" class="hidden animate-pop-in">
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="goToMenu()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-display font-bold text-xs sm:text-sm transition flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>К темам</span>
+                </button>
+                <div class="text-right">
+                    <span id="map-stars-badge" class="px-3 py-1 rounded-full bg-amber-100 text-amber-700 font-display font-bold text-xs sm:text-sm">
+                        <i class="fa-solid fa-star text-amber-500"></i> 0 / 45
+                    </span>
+                </div>
+            </div>
+
+            <div class="mb-5">
+                <h2 id="map-category-title" class="text-2xl sm:text-3xl font-display font-extrabold text-slate-900">
+                    Наука и космос
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                    Пройди все 15 уникальных уровней! Сложность растёт каждые 5 этапов.
+                </p>
+            </div>
+
+            <!-- Легенда сложности -->
+            <div class="flex flex-wrap gap-2 mb-4 text-xs font-semibold">
+                <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700">1–5: Старт</span>
+                <span class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700">6–10: Продвинутый</span>
+                <span class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700">11–15: Магистр</span>
+            </div>
+
+            <!-- Сетка из 15 уровней -->
+            <div id="levels-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-2.5 sm:gap-3 mb-2">
+                <!-- Карточки уровней генерируются через JS -->
+            </div>
+        </div>
+
+        <!-- ЭКРАН 2: ИГРОВОЙ ПРОЦЕСС -->
+        <div id="game-screen" class="hidden">
+            <!-- Статус-бар: Назад, Жизни, Уровень, Очки и Комбо -->
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-100 p-3 rounded-2xl mb-4">
+                <div class="flex items-center gap-2.5">
+                    <button onclick="exitLevelToMap()" class="w-8 h-8 rounded-xl bg-white hover:bg-slate-200 text-slate-600 flex items-center justify-center shadow-sm transition" title="Вернуться к карте уровней">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <!-- Жизни (Сердечки) -->
+                    <div id="lives-container" class="flex items-center gap-1 text-rose-500 text-base sm:text-lg" title="Осталось жизней">
+                        <i class="fa-solid fa-heart"></i>
+                        <i class="fa-solid fa-heart"></i>
+                        <i class="fa-solid fa-heart"></i>
+                    </div>
+                </div>
+
+                <!-- Бейдж уровня и комбо -->
+                <div class="flex items-center gap-1.5">
+                    <span id="level-badge" class="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm">
+                        Уровень 1
+                    </span>
+                    <span id="combo-badge" class="hidden px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-xs sm:text-sm shadow-sm animate-bounce">
+                        🔥 x2
+                    </span>
+                </div>
+
+                <!-- Текущие очки -->
+                <div class="font-display font-extrabold text-slate-800 text-base sm:text-lg flex items-center gap-1.5">
+                    <i class="fa-solid fa-bolt text-amber-400"></i>
+                    <span id="score-display">0</span>
+                </div>
+            </div>
+
+            <!-- Прогресс бар вопросов внутри уровня -->
+            <div class="mb-4">
+                <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1">
+                    <span id="category-label">Категория • Тема уровня</span>
+                    <span id="question-counter">Задание 1 из 3</span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-pink-500 transition-all duration-300 rounded-full" style="width: 33%"></div>
+                </div>
+            </div>
+
+            <!-- Таймер вопроса -->
+            <div class="flex items-center gap-3 mb-5">
+                <div id="timer-icon" class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0">
+                    <span id="timer-text">20</span>
+                </div>
+                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div id="timer-bar" class="h-full bg-emerald-500 transition-all duration-100 linear" style="width: 100%"></div>
+                </div>
+            </div>
+
+            <!-- Карточка с вопросом -->
+            <div id="question-box" class="mb-5">
+                <span id="question-type-tag" class="inline-block px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-bold uppercase tracking-wider mb-2">
+                    Классический вопрос
+                </span>
+                <h2 id="question-text" class="text-lg sm:text-2xl font-display font-bold text-slate-900 leading-snug">
+                    Загрузка задания...
+                </h2>
+            </div>
+
+            <!-- Варианты ответов -->
+            <div id="options-container" class="grid grid-cols-1 gap-3 mb-5">
+                <!-- Кнопки генерируются через JS -->
+            </div>
+
+            <!-- Блок с объяснением и кнопкой "Далее" -->
+            <div id="feedback-box" class="hidden rounded-2xl p-4 mb-2 border transition-all animate-pop-in">
+                <div class="flex items-start gap-3">
+                    <div id="feedback-icon" class="text-2xl mt-0.5"></div>
+                    <div class="flex-1">
+                        <h4 id="feedback-title" class="font-display font-bold text-base sm:text-lg mb-1"></h4>
+                        <p id="feedback-explanation" class="text-sm text-slate-700 leading-relaxed"></p>
+                    </div>
+                </div>
+                <button id="next-btn" onclick="nextQuestion()" class="mt-4 w-full py-3 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-display font-bold text-base transition flex items-center justify-center gap-2 shadow-md">
+                    <span>Следующее задание</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ЭКРАН 3: РЕЗУЛЬТАТЫ УРОВНЯ -->
+        <div id="end-screen" class="hidden text-center animate-pop-in">
+            <!-- Звёзды за уровень -->
+            <div id="stars-result-container" class="flex justify-center items-center gap-3 mb-4 text-4xl sm:text-5xl">
+                <i id="star-1" class="fa-solid fa-star text-slate-200 transition-all duration-500"></i>
+                <i id="star-2" class="fa-solid fa-star text-slate-200 text-5xl sm:text-6xl -mt-3 transition-all duration-500"></i>
+                <i id="star-3" class="fa-solid fa-star text-slate-200 transition-all duration-500"></i>
+            </div>
+
+            <span id="end-level-badge" class="inline-block px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-wider mb-1">
+                Уровень 1 завершён
+            </span>
+            <h2 id="rank-title" class="text-2xl sm:text-4xl font-display font-extrabold text-slate-900 mb-2">
+                Уровень пройден!
+            </h2>
+            <p id="end-subtitle" class="text-slate-600 text-sm sm:text-base mb-6">
+                Отличный результат! Следующий этап разблокирован.
+            </p>
+
+            <!-- Статистика уровня -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
+                <div class="bg-slate-50 border border-slate-200/80 p-3 sm:p-4 rounded-2xl">
+                    <div class="text-xs text-slate-500 font-medium mb-1">Очки</div>
+                    <div id="final-score" class="text-xl sm:text-2xl font-display font-extrabold text-indigo-600">0</div>
+                </div>
+                <div class="bg-slate-50 border border-slate-200/80 p-3 sm:p-4 rounded-2xl">
+                    <div class="text-xs text-slate-500 font-medium mb-1">Точность</div>
+                    <div id="final-accuracy" class="text-xl sm:text-2xl font-display font-extrabold text-emerald-600">0%</div>
+                </div>
+                <div class="bg-slate-50 border border-slate-200/80 p-3 sm:p-4 rounded-2xl">
+                    <div class="text-xs text-slate-500 font-medium mb-1">Макс. комбо</div>
+                    <div id="final-combo" class="text-xl sm:text-2xl font-display font-extrabold text-amber-500">0</div>
+                </div>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button id="next-level-btn" onclick="startNextLevel()" class="flex-1 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-display font-bold text-base shadow-lg shadow-emerald-500/25 transition flex items-center justify-center gap-2">
+                    <span>Следующий уровень</span>
+                    <i class="fa-solid fa-forward"></i>
+                </button>
+                <button onclick="restartCurrentLevel()" class="py-3.5 px-5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-display font-bold text-base transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span>Заново</span>
+                </button>
+                <button onclick="openLevelMap(gameState.category)" class="py-3.5 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-display font-bold text-base transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-map"></i>
+                    <span>Карта</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+         * ПОЛНАЯ БАЗА ИЗ 75 УНИКАЛЬНЫХ УРОВНЕЙ (5 КАТЕГОРИЙ × 15 УРОВНЕЙ × 3 ЗАДАНИЯ = 225 УНИКАЛЬНЫХ ЗАДАНИЙ)
+         * Каждый уровень имеет уникальный сюжет/тему, нарастающую сложность (1-5 Лёгкий, 6-10 Средний, 11-15 Сложный)
+         * и разные типы заданий: 'classic' (выбор факта), 'odd' (найди лишнее), 'truefalse' (правда или миф), 'logic' (задача/последовательность).
+         */
+        const LEVELS_DATA = {
+            // =========================================================================
+            // 1. НАУКА И КОСМОС (15 УРОВНЕЙ)
+            // =========================================================================
+            science: [
+                {
+                    level: 1, title: 'Солнечная система',
+                    questions: [
+                        { type: 'classic', q: 'Какая планета находится ближе всего к Солнцу?', options: ['Венера', 'Меркурий', 'Марс', 'Земля'], correct: 1, explanation: 'Меркурий — самая близкая к Солнцу и самая маленькая планета Солнечной системы.' },
+                        { type: 'truefalse', q: 'Правда ли, что Солнце — это звезда?', options: ['Правда, это жёлтый карлик', 'Миф, это раскалённая планета'], correct: 0, explanation: 'Солнце — типичная звезда класса жёлтый карлик, в которой идут термоядерные реакции.' },
+                        { type: 'odd', q: 'Найди лишнее среди планет-гигантов:', options: ['Юпитер', 'Сатурн', 'Марс', 'Нептун'], correct: 2, explanation: 'Марс относится к планетам земной группы, а Юпитер, Сатурн и Нептун — гиганты.' }
+                    ]
+                },
+                {
+                    level: 2, title: 'Агрегатные состояния',
+                    questions: [
+                        { type: 'classic', q: 'При какой температуре чистая вода кипит на уровне моря?', options: ['50 °C', '90 °C', '100 °C', '120 °C'], correct: 2, explanation: 'При нормальном атмосферном давлении температура кипения воды составляет ровно 100 °C.' },
+                        { type: 'logic', q: 'Лёд тает и превращается в воду. Как называется обратный процесс?', options: ['Испарение', 'Кристаллизация (замерзание)', 'Конденсация', 'Сублимация'], correct: 1, explanation: 'Переход вещества из жидкого состояния в твёрдое кристаллическое называется кристаллизацией.' },
+                        { type: 'truefalse', q: 'Правда ли, что горячая вода в морозилке иногда замерзает быстрее холодной?', options: ['Правда (эффект Мпембы)', 'Миф, это невозможно'], correct: 0, explanation: 'Эффект Мпембы действительно существует и связан с интенсивным испарением и конвекцией.' }
+                    ]
+                },
+                {
+                    level: 3, title: 'Мир животных',
+                    questions: [
+                        { type: 'odd', q: 'Кто из этих животных НЕ является млекопитающим?', options: ['Дельфин', 'Летучая мышь', 'Пингвин', 'Синий кит'], correct: 2, explanation: 'Пингвин — это нелетающая морская птица, а дельфин, кит и летучая мышь вскармливают детёнышей молоком.' },
+                        { type: 'classic', q: 'Какое животное способно спать стоя и видеть сны?', options: ['Лошадь', 'Крокодил', 'Акула', 'Черепаха'], correct: 0, explanation: 'Особое строение суставов позволяет лошадям фиксировать ноги и дремать стоя.' },
+                        { type: 'classic', q: 'Сколько сердец у гигантского осьминога?', options: ['Одно', 'Два', 'Три', 'Пять'], correct: 2, explanation: 'У осьминога 3 сердца: одно гонит голубую кровь по телу, а два других проталкивают её через жабры.' }
+                    ]
+                },
+                {
+                    level: 4, title: 'Зелёная планета',
+                    questions: [
+                        { type: 'classic', q: 'Какой пигмент придаёт листьям растений зелёный цвет?', options: ['Каротин', 'Хлорофилл', 'Меланин', 'Гемоглобин'], correct: 1, explanation: 'Хлорофилл улавливает солнечный свет, необходимый растениям для фотосинтеза.' },
+                        { type: 'logic', q: 'Что поглощает лист на свету, а что выделяет?', options: ['Поглощает O₂, выделяет CO₂', 'Поглощает CO₂, выделяет O₂', 'Поглощает азот, выделяет гелий', 'Ничего не выделяет'], correct: 1, explanation: 'В процессе фотосинтеза растения поглощают углекислый газ (CO₂) и обогащают атмосферу кислородом (O₂).' },
+                        { type: 'truefalse', q: 'Бамбук — это дерево или трава?', options: ['Это гигантская трава', 'Это лиственное дерево'], correct: 0, explanation: 'Ботанически бамбук относится к семейству злаков — это самая быстрорастущая трава на Земле!' }
+                    ]
+                },
+                {
+                    level: 5, title: 'Тело человека',
+                    questions: [
+                        { type: 'classic', q: 'Какой орган человека перекачивает кровь по всему организму?', options: ['Лёгкие', 'Печень', 'Сердце', 'Селезёнка'], correct: 2, explanation: 'За сутки человеческое сердце совершает около 100 000 ударов, перекачивая более 7000 литров крови.' },
+                        { type: 'classic', q: 'Какой орган чувств отвечает за равновесие человека?', options: ['Вестибулярный аппарат во внутреннем ухе', 'Сетчатка глаза', 'Обонятельные рецепторы', 'Мозжечок в спине'], correct: 0, explanation: 'Во внутреннем ухе находятся полукружные каналы, которые фиксируют положение головы в пространстве.' },
+                        { type: 'odd', q: 'Найди лишнее среди костей руки человека:', options: ['Плечевая', 'Лучевая', 'Локтевая', 'Бедренная'], correct: 3, explanation: 'Бедренная кость находится в ноге — это самая длинная и прочная кость в скелете человека.' }
+                    ]
+                },
+                {
+                    level: 6, title: 'Электричество и магнетизм',
+                    questions: [
+                        { type: 'classic', q: 'Какие частицы создают электрический ток в металлических проводах?', options: ['Протоны', 'Нейтроны', 'Свободные электроны', 'Фотоны'], correct: 2, explanation: 'Электрический ток в металлах — это упорядоченное движение отрицательно заряженных электронов.' },
+                        { type: 'logic', q: 'Что произойдёт, если поднести друг к другу два северных полюса магнита?', options: ['Они притянутся', 'Они оттолкнутся', 'Ничего не произойдёт', 'Магниты размагнитятся'], correct: 1, explanation: 'Одноимённые полюса магнитов (N–N или S–S) всегда отталкиваются, а разноимённые — притягиваются.' },
+                        { type: 'classic', q: 'В каких единицах измеряется электрическое сопротивление?', options: ['В Вольтах', 'В Амперах', 'В Омах', 'В Ваттах'], correct: 2, explanation: 'Единица сопротивления названа в честь немецкого физика Георга Ома.' }
+                    ]
+                },
+                {
+                    level: 7, title: 'Таблица Менделеева',
+                    questions: [
+                        { type: 'classic', q: 'Какой химический элемент стоит на первом месте в таблице Менделеева?', options: ['Гелий', 'Водород', 'Кислород', 'Литий'], correct: 1, explanation: 'Водород (H) — самый лёгкий и самый распространённый элемент во Вселенной.' },
+                        { type: 'classic', q: 'Какой металл остаётся жидким при комнатной температуре?', options: ['Свинец', 'Олово', 'Ртуть', 'Цинк'], correct: 2, explanation: 'Ртуть (Hg) затвердевает только при температуре -38,8 °C.' },
+                        { type: 'odd', q: 'Какой из этих газов НЕ входит в состав воздуха Земли в заметном количестве?', options: ['Азот (78%)', 'Кислород (21%)', 'Хлор', 'Аргон (0,9%)'], correct: 2, explanation: 'Хлор — ядовитый жёлто-зелёный газ, которого нет в чистом атмосферном воздухе.' }
+                    ]
+                },
+                {
+                    level: 8, title: 'Свет и оптика',
+                    questions: [
+                        { type: 'classic', q: 'Сколько основных цветов традиционно выделяют в радуге?', options: ['5', '6', '7', '9'], correct: 2, explanation: 'Красный, оранжевый, жёлтый, зелёный, голубой, синий и фиолетовый — результат дисперсии белого света.' },
+                        { type: 'logic', q: 'Почему мы видим траву зелёной?', options: ['Она поглощает зелёный свет', 'Она отражает зелёный спектр и поглощает остальные', 'Она светится сама', 'Так работает атмосфера'], correct: 1, explanation: 'Хлорофилл поглощает красные и синие лучи для фотосинтеза, а зелёные отражает в наши глаза.' },
+                        { type: 'classic', q: 'За сколько времени свет от Солнца долетает до Земли?', options: ['Мгновенно', 'Около 8 минут 20 секунд', 'За 1 час', 'За 24 часа'], correct: 1, explanation: 'Расстояние до Солнца ~150 млн км, свет преодолевает его примерно за 500 секунд.' }
+                    ]
+                },
+                {
+                    level: 9, title: 'Микромир и клетки',
+                    questions: [
+                        { type: 'classic', q: 'Как называют «энергетические станции» живой клетки?', options: ['Рибосомы', 'Митохондрии', 'Лизосомы', 'Вакуоли'], correct: 1, explanation: 'Митохондрии синтезируют молекулы АТФ — универсальный источник энергии для всех процессов в клетке.' },
+                        { type: 'truefalse', q: 'Имеют ли бактерии оформленное клеточное ядро?', options: ['Нет, они прокариоты', 'Да, как у животных'], correct: 0, explanation: 'Бактерии относятся к прокариотам: их кольцевая ДНК свободно плавает в цитоплазме без ядерной оболочки.' },
+                        { type: 'classic', q: 'Какая молекула хранит генетическую программу живых организмов?', options: ['Глюкоза', 'ДНК', 'Крахмал', 'Инсулин'], correct: 1, explanation: 'Дезоксирибонуклеиновая кислота (ДНК) имеет форму двойной спирали и кодирует наследственную информацию.' }
+                    ]
+                },
+                {
+                    level: 10, title: 'Луна и приливы',
+                    questions: [
+                        { type: 'classic', q: 'Почему мы всегда видим только одну сторону Луны с Земли?', options: ['Луна не вращается вокруг своей оси', 'Период вращения Луны вокруг оси равен периоду её обращения вокруг Земли', 'Обратная сторона чёрная', 'Из-за солнечного ветра'], correct: 1, explanation: 'Это явление называется приливным захватом: один оборот вокруг себя и вокруг Земли Луна делает за 27,3 суток.' },
+                        { type: 'classic', q: 'Что является главной причиной морских приливов и отливов на Земле?', options: ['Подводные вулканы', 'Гравитационное притяжение Луны и Солнца', 'Вращение ядра Земли', 'Сильные ветры'], correct: 1, explanation: 'Гравитация Луны вытягивает водную оболочку Земли, создавая два приливных горба.' },
+                        { type: 'logic', q: 'Какое затмение происходит, когда Луна оказывается строго между Солнцем и Землёй?', options: ['Лунное затмение', 'Солнечное затмение', 'Парад планет', 'Полярное сияние'], correct: 1, explanation: 'Луна отбрасывает тень на поверхность Земли, закрывая диск Солнца.' }
+                    ]
+                },
+                {
+                    level: 11, title: 'Законы механики',
+                    questions: [
+                        { type: 'classic', q: 'Кто сформулировал три фундаментальных закона классической механики и закон всемирного тяготения?', options: ['Галилео Галилей', 'Исаак Ньютон', 'Альберт Эйнштейн', 'Никола Тесла'], correct: 1, explanation: 'В 1687 году Исаак Ньютон опубликовал труд «Математические начала натуральной философии».' },
+                        { type: 'logic', q: 'Если в вакууме одновременно уронить перо и стальной шар с одной высоты, что упадёт быстрее?', options: ['Стальной шар', 'Перо', 'Они упадут абсолютно одновременно', 'Оба останутся висеть'], correct: 2, explanation: 'Без сопротивления воздуха ускорение свободного падения одинаково для всех тел независимо от их массы!' },
+                        { type: 'classic', q: 'Как называется свойство тела сохранять состояние покоя или равномерного прямолинейного движения?', options: ['Трение', 'Инерция', 'Диффузия', 'Резонанс'], correct: 1, explanation: 'Инерция проявляется, например, когда автобус резко тормозит, а пассажиры продолжают двигаться вперёд.' }
+                    ]
+                },
+                {
+                    level: 12, title: 'Глубокий космос',
+                    questions: [
+                        { type: 'classic', q: 'Как называется наша галактика?', options: ['Туманность Андромеды', 'Млечный Путь', 'Большое Магелланово Облако', 'Сомбреро'], correct: 1, explanation: 'Млечный Путь — спиральная галактика с перемычкой, содержащая от 100 до 400 миллиардов звёзд.' },
+                        { type: 'classic', q: 'Что остаётся после взрыва сверхновой очень массивной звезды?', options: ['Комета', 'Чёрная дыра или нейтронная звезда', 'Газовый гигант', 'Астероидный пояс'], correct: 1, explanation: 'Ядро сверхмассивной звезды сжимается под действием гравитации в сверхплотную нейтронную звезду или чёрную дыру.' },
+                        { type: 'logic', q: 'Что измеряется в световых годах?', options: ['Время жизни звезды', 'Расстояние в космосе', 'Яркость галактики', 'Скорость света'], correct: 1, explanation: 'Световой год — это расстояние, которое свет проходит за один земной год (~9,46 триллионов км).' }
+                    ]
+                },
+                {
+                    level: 13, title: 'Термодинамика и газы',
+                    questions: [
+                        { type: 'classic', q: 'Чему равна температура абсолютного нуля по шкале Цельсия?', options: ['0 °C', '-100 °C', '-273,15 °C', '-459 °C'], correct: 2, explanation: 'При -273,15 °C (0 Кельвинов) прекращается тепловое хаотическое движение молекул.' },
+                        { type: 'classic', q: 'Почему воздушный шар, наполненный гелием, поднимается вверх?', options: ['Гелий отталкивается от земли', 'Плотность гелия меньше плотности воздуха', 'Гелий горячее воздуха', 'Из-за давления внутри шара'], correct: 1, explanation: 'Согласно закону Архимеда, выталкивающая сила воздуха больше силы тяжести лёгкого гелия.' },
+                        { type: 'truefalse', q: 'Правда ли, что на вершине Эвереста вода закипает при температуре около 70 °C?', options: ['Правда, из-за низкого давления', 'Миф, она всегда кипит при 100 °C'], correct: 0, explanation: 'На высоте 8848 м атмосферное давление втрое ниже нормального, поэтому молекулам воды легче покинуть жидкость.' }
+                    ]
+                },
+                {
+                    level: 14, title: 'Эволюция и генетика',
+                    questions: [
+                        { type: 'classic', q: 'Кто является автором теории эволюции путём естественного отбора?', options: ['Грегор Мендель', 'Чарльз Дарвин', 'Луи Пастер', 'Карл Линней'], correct: 1, explanation: 'В 1859 году Чарльз Дарвин выпустил книгу «Происхождение видов путём естественного отбора».' },
+                        { type: 'classic', q: 'Сколько пар хромосом содержится в обычной клетке человека?', options: ['23 пары (46 хромосом)', '24 пары (48 хромосом)', '12 пар (24 хромосомы)', '32 пары (64 хромосомы)'], correct: 0, explanation: 'Человек получает 23 хромосомы от матери и 23 хромосомы от отца.' },
+                        { type: 'odd', q: 'Какой из этих признаков НЕ передаётся по наследству генетически?', options: ['Группа крови', 'Цвет радужки глаз', 'Умение кататься на велосипеде', 'Форма мочки уха'], correct: 2, explanation: 'Навыки, приобретённые при жизни, не меняют последовательность ДНК и не передаются по наследству.' }
+                    ]
+                },
+                {
+                    level: 15, title: 'Кванты и относительность',
+                    questions: [
+                        { type: 'classic', q: 'Что означает буква «c» в знаменитой формуле Эйнштейна E = mc²?', options: ['Массу тела', 'Скорость света в вакууме', 'Заряд электрона', 'Постоянную Планка'], correct: 1, explanation: 'Формула связывает энергию покоя тела с его массой и квадратом скорости света (~300 000 км/с).' },
+                        { type: 'classic', q: 'Как называется элементарная частица — квант электромагнитного излучения (света)?', options: ['Кварк', 'Фотон', 'Бозон', 'Нейтрино'], correct: 1, explanation: 'Фотон не имеет массы покоя и всегда движется со скоростью света.' },
+                        { type: 'logic', q: 'Согласно теории относительности, как течёт время для космонавта, летящего на околосветовой скорости, по сравнению с наблюдателем на Земле?', options: ['Быстрее', 'Медленнее (замедление времени)', 'Абсолютно одинаково', 'Время идёт вспять'], correct: 1, explanation: 'Релятивистское замедление времени — экспериментально подтверждённый эффект: движущиеся часы идут медленнее.' }
+                    ]
+                }
+            ],
+
+            // =========================================================================
+            // 2. ИСТОРИЯ И ЦИВИЛИЗАЦИИ (15 УРОВНЕЙ)
+            // =========================================================================
+            history: [
+                {
+                    level: 1, title: 'Древний Египет',
+                    questions: [
+                        { type: 'classic', q: 'Какая великая река дала жизнь древнеегипетской цивилизации?', options: ['Тигр', 'Евфрат', 'Нил', 'Иордан'], correct: 2, explanation: 'Ежегодные разливы Нила оставляли плодородный чёрный ил, позволявший собирать богатые урожаи в пустыне.' },
+                        { type: 'classic', q: 'Как назывались правители Древнего Египта?', options: ['Императоры', 'Фараоны', 'Султаны', 'Цари'], correct: 1, explanation: 'Фараонов считали земным воплощением бога Гора и сыновьями бога солнца Ра.' },
+                        { type: 'odd', q: 'Найди лишнее среди символов Древнего Египта:', options: ['Сфинкс', 'Иероглифы', 'Папирус', 'Колизей'], correct: 3, explanation: 'Колизей — знаменитый амфитеатр Древнего Рима, а не Египта.' }
+                    ]
+                },
+                {
+                    level: 2, title: 'Античная Греция',
+                    questions: [
+                        { type: 'classic', q: 'В честь какого бога проводились древнегреческие Олимпийские игры?', options: ['Посейдона', 'Зевса', 'Аполлона', 'Ареса'], correct: 1, explanation: 'Игры проводились каждые 4 года в Олимпии в честь верховного бога Зевса; на время игр объявлялось священное перемирие.' },
+                        { type: 'classic', q: 'Кто написал эпические поэмы «Илиада» и «Одиссея»?', options: ['Сократ', 'Гомер', 'Аристотель', 'Геродот'], correct: 1, explanation: 'Легендарный слепой сказитель Гомер создал эти поэмы около VIII века до н.э.' },
+                        { type: 'truefalse', q: 'Правда ли, что спартанские мальчики с 7 лет воспитывались в суровых военных лагерях?', options: ['Правда (система агогэ)', 'Миф, они учились только музыке'], correct: 0, explanation: 'В Спарте главным считалось воспитание выносливых и дисциплинированных воинов.' }
+                    ]
+                },
+                {
+                    level: 3, title: 'Древний Рим',
+                    questions: [
+                        { type: 'classic', q: 'Согласно легенде, кто вскормил основателей Рима — братьев Ромула и Рема?', options: ['Медведица', 'Волчица', 'Орлица', 'Львица'], correct: 1, explanation: 'Капитолийская волчица стала главным символом Вечного города.' },
+                        { type: 'classic', q: 'Как назывались инженерные сооружения римлян для доставки чистой воды в города?', options: ['Акведуки', 'Виадуки', 'Термы', 'Форумы'], correct: 0, explanation: 'Римские акведуки представляли собой многоярусные арочные мосты с водоводами.' },
+                        { type: 'odd', q: 'Кто из этих деятелей НЕ жил в Древнем Риме?', options: ['Юлий Цезарь', 'Цицерон', 'Перикл', 'Октавиан Август'], correct: 2, explanation: 'Перикл был знаменитым афинским государственным деятелем в Древней Греции.' }
+                    ]
+                },
+                {
+                    level: 4, title: 'Древний Китай и Восток',
+                    questions: [
+                        { type: 'classic', q: 'Для защиты от кого начали строить Великую Китайскую стену?', options: ['От римских легионов', 'От набегов кочевых племён с севера', 'От морских пиратов', 'От индийских слонов'], correct: 1, explanation: 'Стена строилась веками для защиты северных границ империи от кочевников (хунну и др.).' },
+                        { type: 'odd', q: 'Какое из этих изобретений НЕ было сделано в Древнем Китае?', options: ['Компас', 'Порох', 'Алфавит из 22 согласных букв', 'Шёлк'], correct: 2, explanation: 'Консонантный алфавит изобрели финикийцы, а в Китае использовалась иероглифическая письменность.' },
+                        { type: 'classic', q: 'Какая армия из глины в натуральную величину охраняет гробницу императора Цинь Шихуанди?', options: ['Бронзовая армия', 'Терракотовая армия', 'Нефритовая гвардия', 'Фарфоровый легион'], correct: 1, explanation: 'Более 8000 уникальных терракотовых статуй воинов и лошадей были найдены в 1974 году в городе Сиань.' }
+                    ]
+                },
+                {
+                    level: 5, title: 'Эпоха викингов',
+                    questions: [
+                        { type: 'classic', q: 'Как назывались быстрые деревянные корабли викингов с резными головами драконов?', options: ['Каравеллы', 'Драккары', 'Галеоны', 'Фрегаты'], correct: 1, explanation: 'Драккары имели малую осадку, что позволяло викингам плавать и по открытым морям, и по неглубоким рекам.' },
+                        { type: 'classic', q: 'Какой мореплаватель-викинг достиг берегов Северной Америки за 500 лет до Колумба?', options: ['Эрик Рыжий', 'Лейф Эрикссон', 'Рагнар Лодброк', 'Харальд Суровый'], correct: 1, explanation: 'Около 1000 года Лейф Эрикссон высадился на побережье Ньюфаундленда, назвав эту землю Винланд.' },
+                        { type: 'truefalse', q: 'Правда ли, что викинги носили в бою шлемы с огромными коровьими рогами?', options: ['Миф, придуманный художниками XIX века', 'Правда, так делали все воины'], correct: 0, explanation: 'Археологи не нашли ни одного боевого шлема викингов с рогами — в бою рога только мешали бы.' }
+                    ]
+                },
+                {
+                    level: 6, title: 'Средневековая Европа',
+                    questions: [
+                        { type: 'classic', q: 'Как назывался свод правил чести, отваги и благородства средневековых воинов?', options: ['Бусидо', 'Рыцарский кодекс', 'Домострой', 'Магна Карта'], correct: 1, explanation: 'Рыцарский кодекс требовал защищать слабых, хранить верность сеньору и держать данное слово.' },
+                        { type: 'logic', q: 'Зачем вокруг средневековых замков выкапывали глубокий ров с водой?', options: ['Для разведения рыбы', 'Чтобы враги не могли подвести осадные башни и сделать подкоп', 'Для красоты', 'Для охлаждения стен'], correct: 1, explanation: 'Ров с водой делал невозможным подкоп под стены и таран ворот.' },
+                        { type: 'classic', q: 'Как назывались объединения ремесленников одной профессии в средневековых городах?', options: ['Цеха (гильдии)', 'Синдикаты', 'Ордена', 'Парламенты'], correct: 0, explanation: 'Цеха контролировали качество товаров, цены и обучение подмастерьев.' }
+                    ]
+                },
+                {
+                    level: 7, title: 'Великие географические открытия',
+                    questions: [
+                        { type: 'classic', q: 'В каком году экспедиция Христофора Колумба впервые достигла берегов Америки?', options: ['1453', '1492', '1519', '1607'], correct: 1, explanation: '12 октября 1492 года корабли Колумба пристали к острову Сан-Сальвадор в Багамском архипелаге.' },
+                        { type: 'classic', q: 'Кто первым из европейцев открыл морской путь из Европы в Индию вокруг Африки?', options: ['Васко да Гама', 'Америго Веспуччи', 'Фернан Магеллан', 'Бартоломеу Диаш'], correct: 0, explanation: 'В 1498 году португальская эскадра Васко да Гамы прибыла в индийский порт Каликут.' },
+                        { type: 'logic', q: 'В честь кого получил своё название континент Америка?', options: ['В честь Христофора Колумба', 'В честь картографа Америго Веспуччи', 'В честь испанского короля', 'От слова «изумруд»'], correct: 1, explanation: 'Флорентиец Америго Веспуччи первым понял и доказал, что открытые земли — это новый континент, а не Азия.' }
+                    ]
+                },
+                {
+                    level: 8, title: 'Эпоха Возрождения',
+                    questions: [
+                        { type: 'classic', q: 'Какой итальянский город считается колыбелью эпохи Возрождения (Ренессанса)?', options: ['Венеция', 'Флоренция', 'Неаполь', 'Милан'], correct: 1, explanation: 'Во Флоренции жили и творили Данте, Леонардо да Винчи, Микеланджело и Боттичелли.' },
+                        { type: 'classic', q: 'Кто из учёных Возрождения создал гелиоцентрическую систему мира (Земля вращается вокруг Солнца)?', options: ['Николай Коперник', 'Клавдий Птолемей', 'Архимед', 'Иоганн Кеплер'], correct: 0, explanation: 'В 1543 году вышел труд Коперника «О вращении небесных сфер», совершивший переворот в астрономии.' },
+                        { type: 'truefalse', q: 'Правда ли, что Леонардо да Винчи проектировал прототипы парашюта, вертолёта и танка?', options: ['Правда, в своих записных книжках', 'Миф, он занимался только живописью'], correct: 0, explanation: 'В кодексах Леонардо сохранились сотни инженерных чертежей, опередивших своё время на столетия.' }
+                    ]
+                },
+                {
+                    level: 9, title: 'Промышленная революция',
+                    questions: [
+                        { type: 'classic', q: 'В какой стране в XVIII веке началась первая промышленная революция?', options: ['Франция', 'Великобритания', 'Германия', 'США'], correct: 1, explanation: 'Изобретение паровой машины Джеймса Уатта и ткацких станков превратило Британию в «мастерскую мира».' },
+                        { type: 'classic', q: 'Какой источник энергии стал главным двигателем фабрик и паровозов в XIX веке?', options: ['Нефть', 'Каменный уголь и пар', 'Природный газ', 'Солнечная энергия'], correct: 1, explanation: 'Сжигание угля нагревало воду в котлах, а энергия пара приводила в движение станки, паровозы и пароходы.' },
+                        { type: 'logic', q: 'Как изобретение телеграфа в XIX веке изменило мир?', options: ['Позволило передавать сообщения на тысячи километров за секунды', 'Заменило железные дороги', 'Позволило летать на дирижаблях', 'Создало интернет'], correct: 0, explanation: 'Электрический телеграф и азбука Морзе впервые в истории отделили скорость передачи информации от скорости транспорта.' }
+                    ]
+                },
+                {
+                    level: 10, title: 'История письменности и книг',
+                    questions: [
+                        { type: 'classic', q: 'На чём писали жители Древней Месопотамии (Шумера и Вавилона)?', options: ['На бересте', 'На глиняных табличках клинописью', 'На пергаменте', 'На шёлке'], correct: 1, explanation: 'Писцы выдавливали знаки тростниковой палочкой на сырой глине, а затем обжигали таблички.' },
+                        { type: 'classic', q: 'Из чего в древности изготавливали пергамент?', options: ['Из тростника', 'Из специально выделанной кожи животных', 'Из коры берёзы', 'Из хлопка'], correct: 1, explanation: 'Пергамент (названный в честь города Пергам) был гораздо долговечнее папируса и позволял писать с обеих сторон.' },
+                        { type: 'classic', q: 'Кто создал славянскую азбуку в IX веке?', options: ['Кирилл и Мефодий', 'Нестор Летописец', 'Иван Фёдоров', 'Ярослав Мудрый'], correct: 0, explanation: 'Братья-просветители Кирилл и Мефодий создали глаголицу, на основе которой их ученики разработали кириллицу.' }
+                    ]
+                },
+                {
+                    level: 11, title: 'Загадки древних цивилизаций',
+                    questions: [
+                        { type: 'classic', q: 'Какая цивилизация Мезоамерики создала точнейший календарь и письменность в джунглях Юкатана?', options: ['Инки', 'Майя', 'Ольмеки', 'Тольтеки'], correct: 1, explanation: 'Цивилизация майя достигла выдающихся успехов в астрономии, математике (они использовали понятие нуля) и архитектуре.' },
+                        { type: 'classic', q: 'Как империя инков в Андах передавала информацию на огромные расстояния без привычной письменности?', options: ['С помощью узелкового письма «кипу»', 'С помощью голубей', 'Через дымовые сигналы', 'На золотых пластинах'], correct: 0, explanation: 'Кипу — сложная система разноцветных шнуров с узелками, которой пользовались гонцы-часки.' },
+                        { type: 'classic', q: 'Какой древний город высечен прямо в розовых скалах на территории современной Иордании?', options: ['Пальмира', 'Петра', 'Вавилон', 'Персеполь'], correct: 1, explanation: 'Петра была столицей Набатейского царства и важным перекрёстком караванных путей.' }
+                    ]
+                },
+                {
+                    level: 12, title: 'Эпоха Просвещения',
+                    questions: [
+                        { type: 'classic', q: 'Какой масштабный научный труд издали французские просветители во главе с Дени Дидро в XVIII веке?', options: ['«Энциклопедию»', '«Утопию»', '«Государь»', '«Богатство народов»'], correct: 0, explanation: '«Энциклопедия, или Толковый словарь наук, искусств и ремёсел» систематизировала все знания человечества того времени.' },
+                        { type: 'classic', q: 'Кто изобрёл громоотвод и стал одним из отцов-основателей США?', options: ['Джордж Вашингтон', 'Бенджамин Франклин', 'Томас Джефферсон', 'Авраам Линкольн'], correct: 1, explanation: 'Бенджамин Франклин был не только дипломатом, но и выдающимся физиком, исследовавшим атмосферное электричество.' },
+                        { type: 'logic', q: 'Какую главную идею отстаивали философы Просвещения?', options: ['Возврат к феодализму', 'Силу разума, науки, образования и равенства людей перед законом', 'Запрет книгопечатания', 'Изоляцию стран'], correct: 1, explanation: 'Просветители верили, что распространение знаний и науки способно сделать общество справедливым и гуманным.' }
+                    ]
+                },
+                {
+                    level: 13, title: 'Великие изобретения XIX–XX вв.',
+                    questions: [
+                        { type: 'classic', q: 'Кто запатентовал первый практически применимый телефон в 1876 году?', options: ['Александр Белл', 'Томас Эдисон', 'Гульельмо Маркони', 'Александр Попов'], correct: 0, explanation: 'Первой фразой, переданной Беллом по телефону помощнику, была: «Мистер Ватсон, идите сюда, вы мне нужны».' },
+                        { type: 'classic', q: 'В каком году братья Райт совершили первый управляемый полёт на самолёте с двигателем?', options: ['1885', '1903', '1914', '1927'], correct: 1, explanation: '17 декабря 1903 года аппарат «Флайер-1» продержался в воздухе 12 секунд и пролетел 36,5 метров.' },
+                        { type: 'classic', q: 'Какой антибиотик случайно открыл Александр Флеминг в 1928 году, спася миллионы жизней?', options: ['Аспирин', 'Пенициллин', 'Инсулин', 'Стрептоцид'], correct: 1, explanation: 'Флеминг заметил, что плесневый гриб Penicillium уничтожил колонии опасных бактерий в чашке Петри.' }
+                    ]
+                },
+                {
+                    level: 14, title: 'Космическая гонка',
+                    questions: [
+                        { type: 'classic', q: 'Как назывался первый искусственный спутник Земли, запущенный 4 октября 1957 года?', options: ['Восток-1', 'Спутник-1', 'Луна-1', 'Аполлон-11'], correct: 1, explanation: 'Спутник-1 стал началом космической эры человечества, передавая радиосигналы «бип-бип» из космоса.' },
+                        { type: 'classic', q: 'Кто стал первым человеком, вышедшим в открытый космос в 1965 году?', options: ['Юрий Гагарин', 'Алексей Леонов', 'Нил Армстронг', 'Герман Титов'], correct: 1, explanation: '18 марта 1965 года Алексей Леонов провёл за пределами корабля «Восход-2» 12 минут и 9 секунд.' },
+                        { type: 'classic', q: 'В каком году человек впервые ступил на поверхность Луны?', options: ['1961', '1965', '1969', '1975'], correct: 2, explanation: '20 июля 1969 года командир корабля «Аполлон-11» Нил Армстронг сделал первый шаг по Луне.' }
+                    ]
+                },
+                {
+                    level: 15, title: 'История валют и торговли',
+                    questions: [
+                        { type: 'classic', q: 'В каком древнем государстве в VII веке до н.э. начали чеканить первые в мире металлические монеты?', options: ['В Лидии (Малая Азия)', 'В Спарте', 'В Древней Руси', 'В Вавилоне'], correct: 0, explanation: 'Первые монеты чеканились из электрума — природного сплава золота и серебра.' },
+                        { type: 'classic', q: 'Где впервые в истории появились бумажные деньги?', options: ['В Венеции', 'В Китае (эпоха династии Сун)', 'В Англии', 'В Византии'], correct: 1, explanation: 'В XI веке в Китае появились банкноты «цзяоцзы», чтобы купцам не приходилось возить тяжёлые связки медных монет.' },
+                        { type: 'logic', q: 'Как назывался прямой обмен одного товара на другой до появления денег?', options: ['Кредит', 'Бартер', 'Инфляция', 'Акция'], correct: 1, explanation: 'Бартер требовал совпадения потребностей сторон, поэтому человечество и изобрело универсальный эквивалент — деньги.' }
+                    ]
+                }
+            ],
+
+            // =========================================================================
+            // 3. ГЕОГРАФИЯ И ПРИРОДА (15 УРОВНЕЙ)
+            // =========================================================================
+            geo: [
+                {
+                    level: 1, title: 'Континенты и океаны',
+                    questions: [
+                        { type: 'classic', q: 'Сколько материков (континентов) выделяют на Земле?', options: ['4', '5', '6', '7'], correct: 2, explanation: 'На Земле 6 материков: Евразия, Африка, Северная Америка, Южная Америка, Антарктида и Австралия.' },
+                        { type: 'classic', q: 'Какой материк является самым холодным и ветреным на планете?', options: ['Евразия', 'Антарктида', 'Северная Америка', 'Австралия'], correct: 1, explanation: 'В Антарктиде зафиксирована самая низкая температура на Земле (-89,2 °C), а толщина льда достигает 4 км.' },
+                        { type: 'odd', q: 'Найди лишнее среди океанов Земли:', options: ['Индийский', 'Атлантический', 'Средиземный', 'Северный Ледовитый'], correct: 2, explanation: 'Средиземное — это внутреннее море, а не океан.' }
+                    ]
+                },
+                {
+                    level: 2, title: 'Столицы мира',
+                    questions: [
+                        { type: 'classic', q: 'Какой город является столицей Японии?', options: ['Киото', 'Осака', 'Токио', 'Сеул'], correct: 2, explanation: 'Токио — крупнейшая городская агломерация мира с населением более 37 миллионов человек.' },
+                        { type: 'classic', q: 'Столицей какой страны является Каир?', options: ['Марокко', 'Египет', 'Турция', 'Саудовская Аравия'], correct: 1, explanation: 'Каир расположен на берегах Нила неподалёку от знаменитых пирамид Гизы.' },
+                        { type: 'classic', q: 'Какой город является столицей Канады?', options: ['Торонто', 'Ванкувер', 'Монреаль', 'Оттава'], correct: 3, explanation: 'Хотя Торонто крупнее, столицей Канады с 1857 года является Оттава.' }
+                    ]
+                },
+                {
+                    level: 3, title: 'Горы и вершины',
+                    questions: [
+                        { type: 'classic', q: 'Как называется высочайшая горная вершина Земли (8848 м)?', options: ['Килиманджаро', 'Эверест (Джомолунгма)', 'Эльбрус', 'Аконкагуа'], correct: 1, explanation: 'Эверест расположен в Гималаях на границе Непала и Китая.' },
+                        { type: 'classic', q: 'Какая горная цепь тянется вдоль всего западного побережья Южной Америки?', options: ['Кордильеры', 'Анды', 'Альпы', 'Уральские горы'], correct: 1, explanation: 'Анды — самая длинная горная система суши (около 9000 км).' },
+                        { type: 'truefalse', q: 'Правда ли, что вулкан Килиманджаро находится в Африке и покрыт ледниками?', options: ['Правда, в Танзании', 'Миф, в Африке нет снега'], correct: 0, explanation: 'Несмотря на близость к экватору, высота Килиманджаро (5895 м) позволяет снежной шапке сохраняться на вершине.' }
+                    ]
+                },
+                {
+                    level: 4, title: 'Реки и озёра',
+                    questions: [
+                        { type: 'classic', q: 'Какая река протекает через Лондон?', options: ['Сена', 'Темза', 'Дунай', 'Рейн'], correct: 1, explanation: 'Темза делит Лондон на северную и южную части и впадает в Северное море.' },
+                        { type: 'classic', q: 'Какое озеро является самым большим по площади на Земле?', options: ['Байкал', 'Каспийское море', 'Виктория', 'Ладожское'], correct: 1, explanation: 'Каспийское море называют морем из-за огромных размеров и солёной воды, но географически это бессточное озеро.' },
+                        { type: 'odd', q: 'Какая из этих рек протекает НЕ в Европе?', options: ['Волга', 'Дунай', 'Нил', 'Рейн'], correct: 2, explanation: 'Нил — великая река Африки, текущая с юга на север в Средиземное море.' }
+                    ]
+                },
+                {
+                    level: 5, title: 'Острова и архипелаги',
+                    questions: [
+                        { type: 'classic', q: 'Какой остров является самым большим на Земле (не считая материков)?', options: ['Мадагаскар', 'Гренландия', 'Новая Гвинея', 'Великобритания'], correct: 1, explanation: 'Площадь Гренландии составляет более 2,1 млн км², около 80% острова покрыто ледяным щитом.' },
+                        { type: 'classic', q: 'У берегов какого материка находится уникальный остров Мадагаскар?', options: ['Австралия', 'Африка', 'Южная Америка', 'Евразия'], correct: 1, explanation: 'Из-за долгой изоляции около 90% видов животных и растений Мадагаскара (например, лемуры) не встречаются больше нигде.' },
+                        { type: 'logic', q: 'Что такое архипелаг?', options: ['Одинокий остров в океане', 'Группа близко расположенных друг к другу островов', 'Подводный вулкан', 'Узкий перешеек'], correct: 1, explanation: 'Примеры крупных архипелагов — Японские острова, Гавайи, Малайский архипелаг.' }
+                    ]
+                },
+                {
+                    level: 6, title: 'Климатические пояса',
+                    questions: [
+                        { type: 'classic', q: 'Как называется воображаемая линия, делящая Землю на Северное и Южное полушария?', options: ['Нулевой меридиан', 'Экватор', 'Северный тропик', 'Полярный круг'], correct: 1, explanation: 'Длина экватора составляет около 40 075 км; здесь день и ночь круглый год почти равны по длительности.' },
+                        { type: 'classic', q: 'Почему на экваторе всегда жарко, а на полюсах холодно?', options: ['Экватор ближе к Солнцу на миллионы километров', 'Солнечные лучи падают на экватор почти отвесно, а на полюса — под острым углом', 'На полюсах нет атмосферы', 'Из-за океанских течений'], correct: 1, explanation: 'Угол падения солнечных лучей определяет количество тепла, получаемого каждым квадратным метром поверхности.' },
+                        { type: 'truefalse', q: 'Правда ли, что когда в Москве лето, в Австралии зима?', options: ['Правда, из-за наклона земной оси', 'Миф, сезоны везде одинаковы'], correct: 0, explanation: 'Из-за наклона оси Земли (23,5°) Северное и Южное полушария получают максимум солнечного тепла в противоположное время года.' }
+                    ]
+                },
+                {
+                    level: 7, title: 'Пустыни и степи',
+                    questions: [
+                        { type: 'classic', q: 'Как называются песчаные холмы, созданные ветром в пустыне?', options: ['Морены', 'Барханы (дюны)', 'Фьорды', 'Гейзеры'], correct: 1, explanation: 'Барханы могут достигать высоты более 100 метров и медленно «переползать» под действием ветра.' },
+                        { type: 'classic', q: 'Какая пустыня в Южной Америке считается самым сухим местом на Земле?', options: ['Сахара', 'Атакама', 'Гоби', 'Каракумы'], correct: 1, explanation: 'В некоторых районах чилийской пустыни Атакама дожди не выпадают десятилетиями.' },
+                        { type: 'logic', q: 'Как называется место в пустыне, где подземные воды выходят на поверхность и растут деревья?', options: ['Оазис', 'Лагуна', 'Атолл', 'Дельта'], correct: 0, explanation: 'Оазисы издревле служили жизненно важными остановками для караванов.' }
+                    ]
+                },
+                {
+                    level: 8, title: 'Вулканы и землетрясения',
+                    questions: [
+                        { type: 'classic', q: 'Как называется расплавленная горная порода, изливающаяся на поверхность при извержении вулкана?', options: ['Магма', 'Лава', 'Базальт', 'Пемза'], correct: 1, explanation: 'В недрах Земли расплав называется магмой, а выйдя на поверхность и потеряв газы, он становится лавой.' },
+                        { type: 'classic', q: 'Вдоль побережья какого океана расположено «Тихоокеанское огненное кольцо»?', options: ['Атлантического', 'Тихого', 'Индийского', 'Северного Ледовитого'], correct: 1, explanation: 'Здесь сосредоточено около 75% всех действующих вулканов планеты и происходит 90% землетрясений.' },
+                        { type: 'classic', q: 'Как называются горячие источники, периодически выбрасывающие фонтаны кипятка и пара?', options: ['Гейзеры', 'Водопады', 'Фьорды', 'Лиманы'], correct: 0, explanation: 'Знаменитые долины гейзеров находятся в Исландии, на Камчатке и в Йеллоустоне.' }
+                    ]
+                },
+                {
+                    level: 9, title: 'Морские течения и проливы',
+                    questions: [
+                        { type: 'classic', q: 'Какое тёплое океанское течение согревает климат Западной и Северной Европы?', options: ['Течение Гумбольдта', 'Гольфстрим', 'Лабрадорское течение', 'Куросио'], correct: 1, explanation: 'Гольфстрим и его продолжение (Северо-Атлантическое течение) несут тёплые воды из Мексиканского залива к берегам Европы.' },
+                        { type: 'classic', q: 'Какой пролив соединяет Средиземное море с Атлантическим океаном?', options: ['Босфор', 'Гибралтарский пролив', 'Ла-Манш', 'Дарданеллы'], correct: 1, explanation: 'Ширина Гибралтарского пролива между Европой (Испания) и Африкой (Марокко) в самом узком месте всего 14 км.' },
+                        { type: 'classic', q: 'Какой искусственный канал соединяет Тихий и Атлантический океаны?', options: ['Суэцкий канал', 'Панамский канал', 'Кильский канал', 'Беломорканал'], correct: 1, explanation: 'Панамский канал сократил морской путь между Нью-Йорком и Сан-Франциско более чем на 12 000 км.' }
+                    ]
+                },
+                {
+                    level: 10, title: 'Природные чудеса света',
+                    questions: [
+                        { type: 'classic', q: 'Где находится Большой Барьерный риф — крупнейшая в мире система коралловых рифов?', options: ['У берегов Бразилии', 'У северо-восточного побережья Австралии', 'В Красном море', 'У берегов Японии'], correct: 1, explanation: 'Большой Барьерный риф тянется более чем на 2300 км и виден даже из космоса.' },
+                        { type: 'classic', q: 'На какой реке расположен грандиозный водопад Виктория в Африке?', options: ['Нил', 'Замбези', 'Конго', 'Лимпопо'], correct: 1, explanation: 'Местные жители называют водопад Виктория «Гремящий дым» из-за облака брызг, поднимающегося на 400 метров.' },
+                        { type: 'classic', q: 'Какая река прорезала знаменитый Гранд-Каньон в США?', options: ['Миссисипи', 'Колорадо', 'Гудзон', 'Юкон'], correct: 1, explanation: 'На протяжении миллионов лет река Колорадо углубляла русло в плато, создав каньон глубиной до 1800 метров.' }
+                    ]
+                },
+                {
+                    level: 11, title: 'Часовые пояса и координаты',
+                    questions: [
+                        { type: 'classic', q: 'Через какой город проходит нулевой (Гринвичский) меридиан?', options: ['Париж', 'Лондон', 'Берлин', 'Мадрид'], correct: 1, explanation: 'Меридиан проходит через Королевскую обсерваторию в Гринвиче (район Лондона) и служит точкой отсчёта долготы и времени.' },
+                        { type: 'logic', q: 'На сколько градусов поворачивается Земля вокруг своей оси за 1 час?', options: ['На 10°', 'На 15°', 'На 24°', 'На 30°'], correct: 1, explanation: 'Полный оборот 360° Земля совершает за 24 часа: 360° / 24 = 15° в час (ширина одного часового пояса).' },
+                        { type: 'classic', q: 'В каком океане проходит большая часть Линии перемены даты?', options: ['В Атлантическом', 'В Тихом', 'В Индийском', 'В Северном Ледовитом'], correct: 1, explanation: 'Линия проходит по 180-му меридиану в Тихом океане, чтобы не делить населённые страны на два разных календарных дня.' }
+                    ]
+                },
+                {
+                    level: 12, title: 'Редкие экосистемы',
+                    questions: [
+                        { type: 'classic', q: 'Как называются узкие, глубокие и извилистые морские заливы со скалистыми берегами в Норвегии?', options: ['Атоллы', 'Фьорды', 'Эстуарии', 'Шхеры'], correct: 1, explanation: 'Фьорды образовались в результате движения гигантских ледников в ледниковый период.' },
+                        { type: 'classic', q: 'Как называются леса, растущие прямо в солёной воде тропических побережий?', options: ['Тайга', 'Мангровые леса', 'Саванна', 'Тундра'], correct: 1, explanation: 'Мангровые деревья имеют мощные ходульные корни и защищают берега от цунами и штормов.' },
+                        { type: 'classic', q: 'Какая природная зона занимает огромные пространства Сибири и Канады и состоит преимущественно из хвойных деревьев?', options: ['Степь', 'Тайга', 'Пампа', 'Прерия'], correct: 1, explanation: 'Тайга — крупнейший сухопутный биом мира, играющий важнейшую роль в поглощении углекислого газа.' }
+                    ]
+                },
+                {
+                    level: 13, title: 'География рекордов',
+                    questions: [
+                        { type: 'classic', q: 'Какое море является самым солёным и самым низко расположенным водоёмом суши (-430 м)?', options: ['Красное море', 'Мёртвое море', 'Чёрное море', 'Балтийское море'], correct: 1, explanation: 'Солёность Мёртвого моря составляет около 300–350 промилле (почти в 10 раз выше, чем в океане), поэтому в нём невозможно утонуть.' },
+                        { type: 'classic', q: 'Какой водопад является самым высоким в мире (979 метров)?', options: ['Ниагарский', 'Анхель (в Венесуэле)', 'Игуасу', 'Виктория'], correct: 1, explanation: 'Вода падает с вершины столовой горы Ауян-Тепуи с такой высоты, что превращается в туман, не долетая до земли.' },
+                        { type: 'classic', q: 'Какая страна является самой маленькой по площади в мире?', options: ['Монако', 'Ватикан', 'Сан-Марино', 'Лихтенштейн'], correct: 1, explanation: 'Площадь Ватикана внутри Рима составляет всего 0,44 км².' }
+                    ]
+                },
+                {
+                    level: 14, title: 'Атмосфера и ветры',
+                    questions: [
+                        { type: 'classic', q: 'Как называются постоянные ветры, дующие от тропиков к экватору?', options: ['Бризы', 'Пассаты', 'Муссоны', 'Торнадо'], correct: 1, explanation: 'В эпоху парусного флота пассаты были надёжными попутными ветрами для кораблей, пересекающих океан.' },
+                        { type: 'classic', q: 'Какой слой атмосферы защищает всё живое на Земле от губительного ультрафиолетового излучения Солнца?', options: ['Озоновый слой (в стратосфере)', 'Тропосфера', 'Экзосфера', 'Магнитосфера'], correct: 0, explanation: 'Озон (O₃) поглощает жёсткий солнечный ультрафиолет.' },
+                        { type: 'logic', q: 'Почему днём на морском побережье ветер (бриз) обычно дует с моря на сушу?', options: ['Суша нагревается быстрее моря, тёплый воздух поднимается вверх, и на его место приходит прохладный воздух с моря', 'Море выталкивает воздух волнами', 'Из-за вращения Луны', 'Ночью происходит то же самое'], correct: 0, explanation: 'Разница в скорости нагрева воды и суши создаёт разницу давления и рождает дневной и ночной бризы.' }
+                    ]
+                },
+                {
+                    level: 15, title: 'Тектоника плит',
+                    questions: [
+                        { type: 'classic', q: 'Как назывался единый суперконтинент, существовавший на Земле около 250 млн лет назад?', options: ['Гондвана', 'Пангея', 'Лавразия', 'Атлантида'], correct: 1, explanation: 'Пангея («Вся земля») объединяла почти всю сушу планеты и омывалась единым океаном Панталасса.' },
+                        { type: 'classic', q: 'Кто выдвинул теорию дрейфа материков в 1912 году?', options: ['Альфред Вегенер', 'Александр Гумбольдт', 'Жак-Ив Кусто', 'Фритьоф Нансен'], correct: 0, explanation: 'Вегенер обратил внимание на то, что береговые линии Южной Америки и Африки совпадают, как детали пазла.' },
+                        { type: 'logic', q: 'Как образовались Гималайские горы?', options: ['Из-за столкновения Индостанской и Евразийской литосферных плит', 'От падения гигантского астероида', 'Их намыли древние реки', 'Это потухшие супервулканы'], correct: 0, explanation: 'Индостанская плита продолжает медленно давить на Евразийскую, поэтому Гималаи до сих пор растут на несколько миллиметров в год.' }
+                    ]
+                }
+            ],
+
+            // =========================================================================
+            // 4. ИСКУССТВО И ЛИТЕРАТУРА (15 УРОВНЕЙ)
+            // =========================================================================
+            art: [
+                {
+                    level: 1, title: 'Сказки народов мира',
+                    questions: [
+                        { type: 'classic', q: 'Кто написал сказки «Русалочка», «Гадкий утёнок» и «Снежная королева»?', options: ['Братья Гримм', 'Ханс Кристиан Андерсен', 'Шарль Перро', 'Астрид Линдгрен'], correct: 1, explanation: 'Датский писатель Х. К. Андерсен подарил миру более 150 знаменитых сказок.' },
+                        { type: 'classic', q: 'Какой предмет потеряла Золушка на королевском балу?', options: ['Золотое кольцо', 'Хрустальную туфельку', 'Шёлковую перчатку', 'Диадему'], correct: 1, explanation: 'По туфельке принц смог отыскать таинственную незнакомку по всему королевству.' },
+                        { type: 'odd', q: 'Кто из этих персонажей НЕ является героем сказок Александра Пушкина?', options: ['Царь Салтан', 'Золотой петушок', 'Конёк-Горбунок', 'Балда'], correct: 2, explanation: 'Сказку «Конёк-Горбунок» написал Пётр Ершов.' }
+                    ]
+                },
+                {
+                    level: 2, title: 'Цвета и живопись',
+                    questions: [
+                        { type: 'logic', q: 'Какой цвет получится, если смешать синюю и жёлтую краски?', options: ['Фиолетовый', 'Зелёный', 'Оранжевый', 'Коричневый'], correct: 1, explanation: 'Синий и жёлтый — основные цвета, при смешивании которых образуется зелёный.' },
+                        { type: 'classic', q: 'Как называется жанр живописи, изображающий природу (леса, горы, море)?', options: ['Портрет', 'Натюрморт', 'Пейзаж', 'Марина'], correct: 2, explanation: 'Пейзаж посвящён изображению первозданной или преображённой человеком природы (морской пейзаж называется мариной).' },
+                        { type: 'classic', q: 'Как называется дощечка, на которой художник смешивает краски?', options: ['Мольберт', 'Палитра', 'Холст', 'Этюдник'], correct: 1, explanation: 'Палитра позволяет художнику подбирать нужные оттенки перед нанесением на холст.' }
+                    ]
+                },
+                {
+                    level: 3, title: 'Музыкальные инструменты',
+                    questions: [
+                        { type: 'classic', q: 'Сколько клавиш у стандартного современного рояля или пианино?', options: ['64', '76', '88', '100'], correct: 2, explanation: '88 клавиш (52 белые и 36 чёрных) охватывают 7 с лишним октав.' },
+                        { type: 'odd', q: 'Найди лишнее среди струнных музыкальных инструментов:', options: ['Скрипка', 'Виолончель', 'Флейта', 'Арфа'], correct: 2, explanation: 'Флейта относится к духовым инструментам, звук в ней рождается от потока воздуха.' },
+                        { type: 'classic', q: 'Кто руководит симфоническим оркестром с помощью специальной палочки?', options: ['Композитор', 'Дирижёр', 'Солист', 'Продюсер'], correct: 1, explanation: 'Дирижёр задаёт темп, динамику и следит за слаженным звучанием всех групп инструментов.' }
+                    ]
+                },
+                {
+                    level: 4, title: 'Великие музеи мира',
+                    questions: [
+                        { type: 'classic', q: 'В каком городе находится знаменитый музей Лувр?', options: ['Лондон', 'Париж', 'Рим', 'Мадрид'], correct: 1, explanation: 'Лувр в Париже — один из крупнейших и самых посещаемых художественных музеев мира.' },
+                        { type: 'classic', q: 'Какой знаменитый художественный музей расположен в Зимнем дворце в Санкт-Петербурге?', options: ['Третьяковская галерея', 'Государственный Эрмитаж', 'Русский музей', 'Оружейная палата'], correct: 1, explanation: 'Коллекция Эрмитажа насчитывает около трёх миллионов произведений искусства и памятников мировой культуры.' },
+                        { type: 'classic', q: 'В каком городе находится галерея Уффици, хранящая шедевры итальянского Возрождения?', options: ['Флоренция', 'Венеция', 'Вена', 'Амстердам'], correct: 0, explanation: 'В Уффици во Флоренции находятся знаменитые картины Сандро Боттичелли «Рождение Венеры» и «Весна».' }
+                    ]
+                },
+                {
+                    level: 5, title: 'Мировая классика литературы',
+                    questions: [
+                        { type: 'classic', q: 'Кто написал трагедию «Ромео и Джульетта»?', options: ['Чарльз Диккенс', 'Уильям Шекспир', 'Виктор Гюго', 'Мигель де Сервантес'], correct: 1, explanation: 'Великий английский драматург Уильям Шекспир написал эту пьесу около 1595 года.' },
+                        { type: 'classic', q: 'Какой рыцарь из романа Сервантеса сражался с ветряными мельницами?', options: ['Айвенго', 'Дон Кихот', 'Д’Артаньян', 'Ланселот'], correct: 1, explanation: 'Благородный идальго Дон Кихот Ламанчский принял ветряные мельницы за злых великанов.' },
+                        { type: 'classic', q: 'Кто автор философской сказки «Маленький принц»?', options: ['Жюль Верн', 'Антуан де Сент-Экзюпери', 'Александр Дюма', 'Шарль Перро'], correct: 1, explanation: 'Французский писатель и профессиональный лётчик сам проиллюстрировал свою знаменитую книгу.' }
+                    ]
+                },
+                {
+                    level: 6, title: 'Шедевры живописи',
+                    questions: [
+                        { type: 'classic', q: 'Кто написал знаменитую картину «Мона Лиза» (Джоконда)?', options: ['Рафаэль Санти', 'Леонардо да Винчи', 'Микеланджело', 'Рембрандт'], correct: 1, explanation: '«Мона Лиза» славится загадочной улыбкой и техникой сфумато (мягкой дымки), придуманной Леонардо.' },
+                        { type: 'classic', q: 'Какой нидерландский художник написал картину «Звёздная ночь»?', options: ['Винсент Ван Гог', 'Ян Вермеер', 'Питер Брейгель', 'Иероним Босх'], correct: 0, explanation: 'Ван Гог написал «Звёздную ночь» в 1889 году, используя вихревые, выразительные мазки.' },
+                        { type: 'classic', q: 'Кто написал картину «Девятый вал», изображающую бушующее море на рассвете?', options: ['Иван Шишкин', 'Иван Айвазовский', 'Илья Репин', 'Архип Куинджи'], correct: 1, explanation: 'Иван Айвазовский написал более 6000 картин, большинство из которых посвящено морской стихии.' }
+                    ]
+                },
+                {
+                    level: 7, title: 'Скульптура и архитектура',
+                    questions: [
+                        { type: 'classic', q: 'Кто изваял знаменитую мраморную статую «Давид» высотой более 5 метров?', options: ['Донателло', 'Микеланджело Буонарроти', 'Огюст Роден', 'Бернини'], correct: 1, explanation: 'Микеланджело высек «Давида» из цельной глыбы каррарского мрамора во Флоренции в возрасте 26 лет.' },
+                        { type: 'classic', q: 'В каком стиле построены средневековые соборы с высокими шпилями, стрельчатыми арками и яркими витражами?', options: ['Барокко', 'Готика', 'Классицизм', 'Модерн'], correct: 1, explanation: 'Яркий пример готики — Собор Парижской Богоматери (Нотр-Дам де Пари).' },
+                        { type: 'classic', q: 'Какой знаменитый испанский архитектор создал необычный собор Саграда Фамилия в Барселоне?', options: ['Антонио Гауди', 'Сальвадор Дали', 'Пабло Пикассо', 'Сантьяго Калатрава'], correct: 0, explanation: 'Гауди вдохновлялся природными формами — деревьями, раковинами и волнами.' }
+                    ]
+                },
+                {
+                    level: 8, title: 'Театр и балет',
+                    questions: [
+                        { type: 'classic', q: 'Кто написал музыку к знаменитым балетам «Лебединое озеро» и «Щелкунчик»?', options: ['Модест Мусоргский', 'Пётр Ильич Чайковский', 'Сергей Прокофьев', 'Николай Римский-Корсаков'], correct: 1, explanation: 'Балеты Чайковского стали вершиной мировой музыкальной классики.' },
+                        { type: 'classic', q: 'Как называется театральное представление, в котором все герои поют свои партии в сопровождении оркестра?', options: ['Балет', 'Опера', 'Пантомима', 'Водевиль'], correct: 1, explanation: 'Опера зародилась в Италии в конце XVI века и объединяет музыку, поэзию и сценическое действие.' },
+                        { type: 'logic', q: 'Что означает выражение «театр начинается с вешалки»?', options: ['В театре важна каждая деталь культуры и уважения к зрителю с первой минуты', 'В театр нельзя заходить в куртке', 'Вешалка — главный реквизит', 'Спектакли идут в гардеробе'], correct: 0, explanation: 'Эта крылатая фраза принадлежит режиссёру Константину Станиславскому.' }
+                    ]
+                },
+                {
+                    level: 9, title: 'Приключения и фантастика',
+                    questions: [
+                        { type: 'classic', q: 'Кто создал знаменитого сыщика Шерлока Холмса и доктора Ватсона?', options: ['Агата Кристи', 'Артур Конан Дойл', 'Эдгар Аллан По', 'Гилберт Честертон'], correct: 1, explanation: 'Шерлок Холмс прославился своим дедуктивным методом расследования преступлений.' },
+                        { type: 'classic', q: 'Какой французский писатель предсказал подводные лодки, полёты на Луну и кругосветные путешествия за 80 дней?', options: ['Жюль Верн', 'Герберт Уэллс', 'Александр Дюма', 'Виктор Гюго'], correct: 0, explanation: 'Жюль Верн считается одним из основоположников жанра научной фантастики.' },
+                        { type: 'classic', q: 'Кто написал легендарную фэнтези-трилогию «Властелин колец»?', options: ['Клайв Льюис', 'Джон Р. Р. Толкин', 'Джоан Роулинг', 'Джордж Мартин'], correct: 1, explanation: 'Профессор Оксфорда Дж. Р. Р. Толкин создал целый мир Средиземья со своими языками, картами и историей.' }
+                    ]
+                },
+                {
+                    level: 10, title: 'Великие композиторы',
+                    questions: [
+                        { type: 'classic', q: 'Какой великий немецкий композитор продолжал сочинять музыку, полностью потеряв слух?', options: ['Иоганн Себастьян Бах', 'Людвиг ван Бетховен', 'Вольфганг Амадей Моцарт', 'Рихард Вагнер'], correct: 1, explanation: 'Будучи глухим, Бетховен написал свою грандиозную Девятую симфонию с «Одой к радости».' },
+                        { type: 'classic', q: 'В каком австрийском городе родился музыкальный вундеркинд Вольфганг Амадей Моцарт?', options: ['Вена', 'Зальцбург', 'Инсбрук', 'Грац'], correct: 1, explanation: 'Моцарт начал сочинять музыку уже в 5 лет и создал более 600 произведений.' },
+                        { type: 'classic', q: 'Кто написал цикл из четырёх скрипичных концертов «Времена года»?', options: ['Антонио Вивальди', 'Никколо Паганини', 'Джузеппе Верди', 'Джоаккино Россини'], correct: 0, explanation: 'Венецианский композитор Антонио Вивальди создал «Времена года» в 1723 году.' }
+                    ]
+                },
+                {
+                    level: 11, title: 'Направления в живописи',
+                    questions: [
+                        { type: 'classic', q: 'Как называется направление в живописи, стремившееся запечатлеть мгновенное впечатление, игру света и воздуха на пленэре?', options: ['Кубизм', 'Импрессионизм', 'Сюрреализм', 'Классицизм'], correct: 1, explanation: 'Название произошло от картины Клода Моне «Впечатление. Восходящее солнце» (Impression).' },
+                        { type: 'classic', q: 'Кто является самым известным художником-сюрреалистом, автором картины «Постоянство памяти» с растекающимися часами?', options: ['Пабло Пикассо', 'Сальвадор Дали', 'Рене Магритт', 'Анри Матисс'], correct: 1, explanation: 'Сюрреализм соединяет сон и реальность в парадоксальных образах.' },
+                        { type: 'classic', q: 'Кто написал знаменитый геометрический шедевр авангарда «Чёрный квадрат»?', options: ['Василий Кандинский', 'Казимир Малевич', 'Марк Шагал', 'Александр Родченко'], correct: 1, explanation: '«Чёрный супрематический квадрат» был создан Казимиром Малевичем в 1915 году.' }
+                    ]
+                },
+                {
+                    level: 12, title: 'Искусство кино и анимации',
+                    questions: [
+                        { type: 'classic', q: 'Кто изобрёл кинематограф и провёл первый платный киносеанс в Париже в 1895 году?', options: ['Братья Люмьер', 'Братья Райт', 'Уолт Дисней', 'Чарли Чаплин'], correct: 0, explanation: 'Огюст и Луи Люмьер показали короткие фильмы, включая «Прибытие поезда на вокзал Ла-Сьота».' },
+                        { type: 'classic', q: 'Кто создал легендарный образ Маленького Бродяги в эпоху немого кино?', options: ['Бастер Китон', 'Чарли Чаплин', 'Альфред Хичкок', 'Орсон Уэллс'], correct: 1, explanation: 'Чарли Чаплин был одновременно актёром, режиссёром, сценаристом и композитором своих фильмов.' },
+                        { type: 'classic', q: 'Какой полнометражный мультфильм студии Уолта Диснея стал первым в истории цветным звуковым анимационным фильмом (1937)?', options: ['Бэмби', 'Белоснежка и семь гномов', 'Золушка', 'Пиноккио'], correct: 1, explanation: '«Белоснежка» совершила революцию в мировой анимации и получила специальный «Оскар».' }
+                    ]
+                },
+                {
+                    level: 13, title: 'Мифология и эпос',
+                    questions: [
+                        { type: 'classic', q: 'Как в древнегреческой мифологии назывался крылатый конь — символ поэтического вдохновения?', options: ['Кентавр', 'Пегас', 'Минотавр', 'Цербер'], correct: 1, explanation: 'По легенде, от удара копыта Пегаса на горе Геликон забил священный источник муз.' },
+                        { type: 'classic', q: 'Кто в скандинавской мифологии владел волшебным молотом Мьёльнир?', options: ['Один', 'Тор', 'Локи', 'Хеймдалль'], correct: 1, explanation: 'Бог грома и молний Тор защищал Мидгард и Асгард с помощью молота Мьёльнир.' },
+                        { type: 'classic', q: 'Сколько подвигов совершил древнегреческий герой Геракл?', options: ['7', '10', '12', '15'], correct: 2, explanation: 'Среди 12 подвигов Геракла — победа над Немейским львом, Лернейской гидрой и очистка Авгиевых конюшен.' }
+                    ]
+                },
+                {
+                    level: 14, title: 'Поэзия и стихосложение',
+                    questions: [
+                        { type: 'classic', q: 'Как называется традиционное японское нерифмованное трёхстишие о природе (5-7-5 слогов)?', options: ['Сонет', 'Хайку (хокку)', 'Ода', 'Баллада'], correct: 1, explanation: 'Мастером хайку был поэт XVII века Мацуо Басё.' },
+                        { type: 'classic', q: 'Сколько строк в классическом сонете (форме, прославленной Петраркой и Шекспиром)?', options: ['8 строк', '12 строк', '14 строк', '16 строк'], correct: 2, explanation: 'Классический сонет состоит из 14 строк, обычно разделённых на два четверостишия и два трёхстишия.' },
+                        { type: 'logic', q: 'Как называется художественный приём: «Лес проснулся и зашептал листвой»?', options: ['Гипербола', 'Олицетворение', 'Антитеза', 'Ирония'], correct: 1, explanation: 'Олицетворение наделяет неживые предметы и явления природы свойствами живых существ.' }
+                    ]
+                },
+                {
+                    level: 15, title: 'Архитектурные чудеса современности',
+                    questions: [
+                        { type: 'classic', q: 'В каком городе расположен знаменитый Оперный театр, крыша которого напоминает белые паруса?', options: ['Мельбурн', 'Сидней', 'Окленд', 'Сингапур'], correct: 1, explanation: 'Сиднейский оперный театр, спроектированный датчанином Йорном Утзоном, стал главным символом Австралии.' },
+                        { type: 'classic', q: 'Какой небоскрёб в Дубае является самым высоким зданием в мире (828 метров)?', options: ['Шанхайская башня', 'Бурдж-Халифа', 'Эмпайр-стейт-билдинг', 'Тайбэй 101'], correct: 1, explanation: 'Бурдж-Халифа имеет 163 этажа и виден с расстояния более 90 километров.' },
+                        { type: 'classic', q: 'Для какого события в Париже в 1889 году была построена Эйфелева башня?', options: ['Для Олимпийских игр', 'Для Всемирной выставки (в честь 100-летия Французской революции)', 'Для коронации', 'Как телебашня'], correct: 1, explanation: 'Инженер Гюстав Эйфель задумывал башню как временную входную арку выставки, но она стала символом Франции.' }
+                    ]
+                }
+            ],
+
+            // =========================================================================
+            // 5. МИКС: ИСПЫТАНИЕ ЭРУДИТА (15 УНИКАЛЬНЫХ УРОВНЕЙ НА ЛОГИКУ И КРУГОЗОР)
+            // =========================================================================
+            mix: [
+                {
+                    level: 1, title: 'Разминка ума',
+                    questions: [
+                        { type: 'logic', q: 'Что тяжелее: 1 килограмм пуха или 1 килограмм железа?', options: ['1 кг железа', '1 кг пуха', 'Они весят одинаково', 'Зависит от погоды'], correct: 2, explanation: 'Оба весят ровно 1 килограмм! Различается только их объём и плотность.' },
+                        { type: 'classic', q: 'Сколько месяцев в году имеют 28 дней?', options: ['Только февраль', '6 месяцев', 'Все 12 месяцев', 'Ни одного'], correct: 2, explanation: 'В каждом из 12 месяцев года есть минимум 28 дней!' },
+                        { type: 'odd', q: 'Найди лишнее слово:', options: ['Яблоко', 'Банан', 'Морковь', 'Груша'], correct: 2, explanation: 'Морковь — это корнеплод (овощ), а остальные — фрукты.' }
+                    ]
+                },
+                {
+                    level: 2, title: 'Числа и логика',
+                    questions: [
+                        { type: 'logic', q: 'Продолжи числовой ряд: 2, 4, 8, 16, 32, ...', options: ['48', '54', '64', '128'], correct: 2, explanation: 'Каждое следующее число умножается на 2: 32 × 2 = 64.' },
+                        { type: 'logic', q: 'У отца Мэри есть 5 дочерей: Чача, Чече, Чичи, Чочо. Как зовут пятую дочь?', options: ['Чучу', 'Мэри', 'Чячя', 'Анна'], correct: 1, explanation: 'В начале задачи сказано: «У отца Мэри...» — значит, пятую дочь зовут Мэри!' },
+                        { type: 'classic', q: 'Сколько градусов составляет полный оборот окружности?', options: ['90°', '180°', '270°', '360°'], correct: 3, explanation: 'Деление окружности на 360 градусов пришло к нам из Древнего Вавилона.' }
+                    ]
+                },
+                {
+                    level: 3, title: 'Языки и слова',
+                    questions: [
+                        { type: 'classic', q: 'Как называется слово или фраза, которые одинаково читаются слева направо и справа налево (например, «шалаш»)?', options: ['Синоним', 'Палиндром', 'Антоним', 'Омоним'], correct: 1, explanation: 'Палиндромы существуют и в словах («топот», «заказ»), и в числах (12321).' },
+                        { type: 'classic', q: 'На каком языке говорит больше всего людей в мире как на родном?', options: ['На английском', 'На испанском', 'На китайском (мандаринском)', 'На арабском'], correct: 2, explanation: 'На китайском языке говорит более 1,1 миллиарда носителей.' },
+                        { type: 'logic', q: 'Что такое полиглот?', options: ['Человек, который много спит', 'Человек, владеющий многими языками', 'Древний свиток', 'Вид словаря'], correct: 1, explanation: 'От греческих слов «поли» (много) и «глотта» (язык).' }
+                    ]
+                },
+                {
+                    level: 4, title: 'Технологии и IT',
+                    questions: [
+                        { type: 'classic', q: 'Сколько битов в одном байте компьютерной информации?', options: ['4 бита', '8 битов', '16 битов', '100 битов'], correct: 1, explanation: '1 байт = 8 битов, что позволяет закодировать 256 различных значений (например, символ текста).' },
+                        { type: 'classic', q: 'Какая система счисления используется в основе работы всех современных процессоров?', options: ['Десятичная (0–9)', 'Двоичная (0 и 1)', 'Римская', 'Шестнадцатеричная'], correct: 1, explanation: 'Ноль и единица соответствуют двум состояниям транзистора: «нет сигнала» и «есть сигнал».' },
+                        { type: 'odd', q: 'Найди лишнее среди языков программирования:', options: ['Python', 'JavaScript', 'C++', 'Photoshop'], correct: 3, explanation: 'Photoshop — это графический редактор, а не язык программирования.' }
+                    ]
+                },
+                {
+                    level: 5, title: 'Спорт и игры',
+                    questions: [
+                        { type: 'classic', q: 'Сколько клеток на стандартной шахматной доске?', options: ['32', '48', '64', '81'], correct: 2, explanation: 'Доска имеет размер 8×8 клеток (32 белые и 32 чёрные).' },
+                        { type: 'classic', q: 'Что символизируют 5 переплетённых колец на Олимпийском флаге?', options: ['5 видов спорта', 'Единство пяти обитаемых частей света', '5 золотых медалей', '5 стихий природы'], correct: 1, explanation: 'Кольца символизируют Европу, Азию, Африку, Америку и Австралию (Океанию).' },
+                        { type: 'classic', q: 'Сколько игроков одной футбольной команды одновременно находится на поле во время матча?', options: ['9', '10', '11', '12'], correct: 2, explanation: 'В каждой команде играют 10 полевых игроков и 1 вратарь.' }
+                    ]
+                },
+                {
+                    level: 6, title: 'Загадки природы',
+                    questions: [
+                        { type: 'classic', q: 'Какое насекомое умеет общаться с сородичами при помощи особого «танца», указывая путь к цветам?', options: ['Муравей', 'Медоносная пчела', 'Стрекоза', 'Кузнечик'], correct: 1, explanation: '«Виляющий танец» пчёл точно сообщает направление относительно Солнца и расстояние до нектара.' },
+                        { type: 'truefalse', q: 'Правда ли, что у хамелеона глаза могут вращаться независимо друг от друга?', options: ['Правда, обзор почти 360°', 'Миф, они смотрят только вперёд'], correct: 0, explanation: 'Хамелеон может одновременно смотреть одним глазом вперёд, а другим — назад.' },
+                        { type: 'classic', q: 'Почему фламинго имеют розовый окрас перьев?', options: ['От солнечного загара', 'Из-за пигментов каротиноидов в рачках и водорослях, которыми они питаются', 'Они рождаются такими', 'Это маскировка в закате'], correct: 1, explanation: 'Птенцы фламинго рождаются серыми, а розовеют постепенно благодаря диете из рачков.' }
+                    ]
+                },
+                {
+                    level: 7, title: 'Еда и ботаника',
+                    questions: [
+                        { type: 'classic', q: 'Из плодов какого дерева изготавливают настоящий шоколад?', options: ['Кофейного дерева', 'Дерева какао', 'Кокосовой пальмы', 'Рожкового дерева'], correct: 1, explanation: 'Какао-бобы — это семена плодов шоколадного дерева (Theobroma cacao), родом из Южной Америки.' },
+                        { type: 'truefalse', q: 'Арахис — это орех или бобовое растение (родственник гороха)?', options: ['Бобовое растение', 'Настоящий орех'], correct: 0, explanation: 'Арахис («земляной орех») относится к семейству бобовых, а его плоды созревают под землёй.' },
+                        { type: 'classic', q: 'Какая специя является самой дорогой в мире, так как собирается вручную из рылец цветков крокуса?', options: ['Ваниль', 'Шафран', 'Кардамон', 'Корица'], correct: 1, explanation: 'Для получения 1 килограмма шафрана нужно вручную собрать около 150 000 цветков.' }
+                    ]
+                },
+                {
+                    level: 8, title: 'Последовательности и паттерны',
+                    questions: [
+                        { type: 'logic', q: 'Найди следующее число в последовательности Фибоначчи: 1, 1, 2, 3, 5, 8, 13, ...', options: ['18', '20', '21', '26'], correct: 2, explanation: 'В ряду Фибоначчи каждое число равно сумме двух предыдущих: 8 + 13 = 21.' },
+                        { type: 'logic', q: 'Если все А — это Б, а некоторые Б — это В, можно ли утверждать, что все А — это В?', options: ['Да, всегда', 'Нет, это логическая ошибка', 'Только по вторникам', 'Да, если А > В'], correct: 1, explanation: 'Например: все кошки (А) — животные (Б), некоторые животные (Б) — собаки (В), но кошки не являются собаками!' },
+                        { type: 'logic', q: 'В комнате горели 7 свечей. 2 из них погасили. Сколько свечей осталось в итоге (когда остальные догорят)?', options: ['5 свечей', '2 свечи', '7 свечей', 'Ни одной'], correct: 1, explanation: '5 горящих свечей сгорят дотла, а 2 погашенные так и останутся стоять!' }
+                    ]
+                },
+                {
+                    level: 9, title: 'Мировые рекорды',
+                    questions: [
+                        { type: 'classic', q: 'Какое животное является самым крупным из всех, когда-либо живших на Земле (включая динозавров)?', options: ['Диплодок', 'Синий кит', 'Африканский слон', 'Мегалодон'], correct: 1, explanation: 'Длина синего кита достигает 33 метров, а масса — более 150 тонн.' },
+                        { type: 'classic', q: 'Какое дерево является самым высоким видом деревьев на планете (более 115 метров)?', options: ['Баобаб', 'Секвойя вечнозелёная', 'Эвкалипт', 'Кедр'], correct: 1, explanation: 'Гигантские секвойи в Калифорнии живут более 2000 лет и вырастают выше 35-этажного дома.' },
+                        { type: 'classic', q: 'Какая птица способна летать задом наперёд и взмахивать крыльями до 80 раз в секунду?', options: ['Стриж', 'Колибри', 'Ласточка', 'Зимородок'], correct: 1, explanation: 'Колибри — единственные птицы, умеющие зависать в воздухе и летать в любом направлении, включая назад.' }
+                    ]
+                },
+                {
+                    level: 10, title: 'Экология и энергия',
+                    questions: [
+                        { type: 'odd', q: 'Какой из этих источников энергии НЕ относится к возобновляемым?', options: ['Солнечные панели', 'Ветрогенераторы', 'Каменный уголь', 'Гидроэлектростанции'], correct: 2, explanation: 'Уголь, нефть и газ — ископаемое топливо, запасы которого не восстанавливаются в масштабах человеческой жизни.' },
+                        { type: 'classic', q: 'Какой газ является главным виновником усиления парникового эффекта в атмосфере Земли?', options: ['Кислород', 'Углекислый газ (CO₂) и метан', 'Гелий', 'Аргон'], correct: 1, explanation: 'Парниковые газы задерживают тепловое излучение Земли, вызывая глобальное потепление.' },
+                        { type: 'logic', q: 'Что означает правило «3R» в экологии (Reduce, Reuse, Recycle)?', options: ['Сокращай потребление, используй повторно, перерабатывай', 'Покупай, выбрасывай, сжигай', 'Руби, строй, асфальтируй', 'Копи, трать, меняй'], correct: 0, explanation: 'Принцип 3R помогает радикально сократить количество мусора на планете.' }
+                    ]
+                },
+                {
+                    level: 11, title: 'Мозг и психология',
+                    questions: [
+                        { type: 'classic', q: 'Как называются основные клетки нервной системы и головного мозга, передающие сигналы?', options: ['Лейкоциты', 'Нейроны', 'Тромбоциты', 'Остеоциты'], correct: 1, explanation: 'В мозге человека около 86 миллиардов нейронов, образующих триллионы связей (синапсов).' },
+                        { type: 'classic', q: 'Во время какой фазы сна человек видит самые яркие и сюжетные сновидения?', options: ['Глубокий медленный сон', 'БДГ-фаза (фаза быстрого движения глаз)', 'Только при засыпании', 'Во сне снов не бывает'], correct: 1, explanation: 'В фазе быстрого сна (REM) активность мозга почти такая же высокая, как при бодрствовании.' },
+                        { type: 'logic', q: 'Что такое «эффект плацебо»?', options: ['Улучшение самочувствия благодаря вере человека в эффективность пустышки', 'Аллергия на лекарства', 'Потеря памяти', 'Боязнь высоты'], correct: 0, explanation: 'Эффект плацебо доказывает мощную связь между ожиданиями мозга и физиологическими реакциями организма.' }
+                    ]
+                },
+                {
+                    level: 12, title: 'Экономика и финансы',
+                    questions: [
+                        { type: 'classic', q: 'Как называется устойчивое повышение общего уровня цен на товары и услуги со временем?', options: ['Дефляция', 'Инфляция', 'Монополия', 'Дивиденд'], correct: 1, explanation: 'При инфляции покупательная способность денег снижается: на ту же сумму можно купить меньше товаров.' },
+                        { type: 'classic', q: 'Как называется ситуация на рынке, когда только одна компания продаёт уникальный товар и диктует цены?', options: ['Конкуренция', 'Монополия', 'Биржа', 'Аукцион'], correct: 1, explanation: 'От греческих слов «монос» (один) и «полео» (продаю).' },
+                        { type: 'logic', q: 'Что такое «сложный процент» в финансах?', options: ['Начисление процентов не только на начальную сумму, но и на уже накопленные проценты', 'Кредит под 100%', 'Налог на покупки', 'Штраф за просрочку'], correct: 0, explanation: 'Сложный процент обеспечивает экспоненциальный рост накоплений на длинной дистанции.' }
+                    ]
+                },
+                {
+                    level: 13, title: 'Криптография и шифры',
+                    questions: [
+                        { type: 'logic', q: 'Расшифруй слово по шифру Цезаря (сдвиг на +1 букву вперёд по алфавиту): «КПД» -> ?', options: ['ЛОЕ', 'МИР', 'КОД', 'СОН'], correct: 2, explanation: 'Если сдвинуть буквы на -1 назад: К->И? Нет, наоборот: если зашифровано сдвигом +1 от «КОД»: К->Л, О->П, Д->Е. А если сдвиг +1 от «ИОГ»... Стоп! Проверяем: К(-1)=Й, П(-1)=О, Д(-1)=Г. Подожди: в слове «КОД» сдвиг на +1 даёт «ЛПЕ», а сдвиг -1 от «ЛПЕ» даёт «КОД». А здесь сдвиг букв: К->К, П->О (-1), Д->Д! Верный ответ: КОД!' },
+                        { type: 'classic', q: 'Как называлась немецкая шифровальная машина времён Второй мировой войны, код которой взломал Алан Тьюринг?', options: ['Энигма', 'Колосс', 'Марк-1', 'Абак'], correct: 0, explanation: 'Взлом «Энигмы» в Блетчли-Парке стал одним из важнейших шагов к созданию современных компьютеров.' },
+                        { type: 'classic', q: 'Что означает буква «S» в протоколе безопасных сайтов HTTPS?', options: ['Speed (быстрый)', 'Secure (безопасный / шифрованный)', 'Simple (простой)', 'Server (сервер)'], correct: 1, explanation: 'HTTPS шифрует передаваемые данные между вашим браузером и сайтом, защищая пароли от перехвата.' }
+                    ]
+                },
+                {
+                    level: 14, title: 'Парадоксы науки',
+                    questions: [
+                        { type: 'classic', q: 'В знаменитом мысленном эксперименте Эрвина Шрёдингера в закрытой коробке находится...', options: ['Кот', 'Собака', 'Часы', 'Зеркало'], correct: 0, explanation: '«Кот Шрёдингера» иллюстрирует принцип квантовой суперпозиции — пребывания системы в нескольких состояниях одновременно до наблюдения.' },
+                        { type: 'classic', q: 'Как называется знаменитый «Парадокс Ферми» в астрономии?', options: ['Почему небо ночью тёмное?', 'Если во Вселенной миллиарды планет, где же следы инопланетных цивилизаций?', 'Почему планеты круглые?', 'Куда исчезает свет в чёрной дыре?'], correct: 1, explanation: 'Физик Энрико Ферми сформулировал этот вопрос в 1950 году: «Ну и где они в таком случае?».' },
+                        { type: 'logic', q: 'Что гласит «Бритва Оккама» в науке и логике?', options: ['Не следует множить сущности без необходимости (самое простое объяснение обычно верное)', 'Любая теория ошибочна', 'Нужно проверять всё дважды', 'Истина всегда сложна'], correct: 0, explanation: 'Принцип назван в честь английского философа XIV века Уильяма Оккама.' }
+                    ]
+                },
+                {
+                    level: 15, title: 'Финал Магистра Эрудиции',
+                    questions: [
+                        { type: 'classic', q: 'Какое число обозначает математическая константа Пи (π) с точностью до сотых?', options: ['3,12', '3,14', '3,16', '3,41'], correct: 1, explanation: 'Число π (3,1415926...) выражает отношение длины любой окружности к её диаметру.' },
+                        { type: 'classic', q: 'Какой древнегреческий учёный воскликнул «Эврика!», открыв закон выталкивающей силы в ванне?', options: ['Пифагор', 'Архимед', 'Евклид', 'Фалес'], correct: 1, explanation: 'Архимед из Сиракуз открыл закон гидростатики, позволивший определить, из чистого ли золота сделана корона царя.' },
+                        { type: 'logic', q: 'Ты прошёл 75-й, финальный уровень! Какой главный секрет развития интеллекта доказан нейробиологией?', options: ['Мозг перестаёт развиваться в 15 лет', 'Нейропластичность — мозг создаёт новые связи всю жизнь, когда мы учимся новому', 'Нужно учить только одну тему', 'Интеллект зависит только от размера головы'], correct: 1, explanation: 'Благодаря нейропластичности регулярные интеллектуальные вызовы и любознательность делают мозг сильнее в любом возрасте!' }
+                    ]
+                }
+            ]
+        };
+
+        // Исправляем формулировку в 13-м уровне Микса для безупречной точности
+        LEVELS_DATA.mix[12].questions[0] = {
+            type: 'logic',
+            q: 'Расшифруй слово, если каждая буква сдвинута на 1 шаг вперёд по алфавиту («КОД» → «ЛПЕ»): «МЙС» → ?',
+            options: ['МИР', 'ЛЕС', 'КОТ', 'СОН'],
+            correct: 0,
+            explanation: 'Сдвигаем каждую букву на 1 назад по алфавиту: М → Л? Нет: Л(+1)=М, И(+1)=Й, Р(+1)=С — получается слово «МИР»!'
+        };
+
+        // Метаданные категорий
+        const CATEGORIES_META = {
+            science: { name: 'Наука и космос', color: 'purple', icon: 'fa-rocket' },
+            history: { name: 'История и цивилизации', color: 'amber', icon: 'fa-landmark' },
+            geo: { name: 'География и природа', color: 'emerald', icon: 'fa-earth-americas' },
+            art: { name: 'Искусство и литература', color: 'rose', icon: 'fa-palette' },
+            mix: { name: 'МИКС: Испытание Эрудита', color: 'indigo', icon: 'fa-shuffle' }
+        };
+
+        // Названия типов заданий
+        const QUESTION_TYPE_LABELS = {
+            classic: '💡 Классический вопрос',
+            odd: '🔍 Найди лишнее',
+            truefalse: '⚖️ Правда или миф',
+            logic: '🧩 Логика и смекалка'
+        };
+
+        // Ключ сохранения в localStorage
+        const STORAGE_KEY = 'erudit_game_progress_v2';
+
+        // Загрузка или инициализация прогресса игрока
+        function loadProgress() {
+            const defaultProgress = {
+                science: { unlocked: 1, stars: {} },
+                history: { unlocked: 1, stars: {} },
+                geo: { unlocked: 1, stars: {} },
+                art: { unlocked: 1, stars: {} },
+                mix: { unlocked: 1, stars: {} }
+            };
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    return { ...defaultProgress, ...parsed };
+                }
+            } catch (e) {
+                console.warn('Не удалось прочитать localStorage', e);
+            }
+            return defaultProgress;
+        }
+
+        function saveProgress() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(userProgress));
+            } catch (e) {
+                console.warn('Не удалось сохранить в localStorage', e);
+            }
+        }
+
+        let userProgress = loadProgress();
+
+        // Состояние текущей игровой сессии (уровня)
+        let gameState = {
+            category: 'science',
+            levelNum: 1,
+            questions: [],
+            currentIndex: 0,
+            score: 0,
+            lives: 3,
+            combo: 0,
+            maxCombo: 0,
+            correctAnswers: 0,
+            totalTimeSpent: 0,
+            timeLeft: 20,
+            timerInterval: null,
+            isAnswered: false,
+            soundEnabled: true
+        };
+
+        const QUESTION_TIME = 20; // секунд на задание
+
+        // Звуковой движок (Tone.js)
+        let synth = null;
+        function initAudio() {
+            if (!synth && window.Tone) {
+                synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                synth.volume.value = -8;
+            }
+        }
+
+        function playSound(type) {
+            if (!gameState.soundEnabled) return;
+            try {
+                initAudio();
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                const now = Tone.now();
+                if (type === 'correct') {
+                    synth.triggerAttackRelease(['C5', 'E5', 'G5'], '16n', now);
+                } else if (type === 'wrong') {
+                    synth.triggerAttackRelease(['E3', 'Eb3'], '8n', now);
+                } else if (type === 'click') {
+                    synth.triggerAttackRelease('C6', '32n', now);
+                } else if (type === 'win') {
+                    synth.triggerAttackRelease(['C5', 'E5', 'G5', 'C6'], '8n', now);
+                }
+            } catch (e) {}
+        }
+
+        // Переключение звука
+        document.getElementById('sound-toggle').addEventListener('click', () => {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            icon.className = gameState.soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark text-rose-500';
+            if (gameState.soundEnabled) playSound('click');
+        });
+
+        // Обновление статистики на главном экране
+        function updateMenuStats() {
+            let totalStarsAll = 0;
+            Object.keys(CATEGORIES_META).forEach(catKey => {
+                const catData = userProgress[catKey] || { unlocked: 1, stars: {} };
+                const starsObj = catData.stars || {};
+                const completedLevels = Object.keys(starsObj).filter(lvl => starsObj[lvl] > 0).length;
+                const catStars = Object.values(starsObj).reduce((sum, s) => sum + s, 0);
+                totalStarsAll += catStars;
+
+                const progEl = document.getElementById(`cat-progress-${catKey}`);
+                const starsEl = document.getElementById(`cat-stars-${catKey}`);
+                if (progEl) progEl.textContent = `${completedLevels}/15`;
+                if (starsEl) starsEl.innerHTML = `<i class="fa-solid fa-star"></i> ${catStars}/45`;
+            });
+            document.getElementById('total-stars-count').textContent = `${totalStarsAll} / 225`;
+        }
+
+        // Открыть карту из 15 уровней для выбранной категории
+        function openLevelMap(category) {
+            playSound('click');
+            clearInterval(gameState.timerInterval);
+            gameState.category = category;
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('map-screen').classList.remove('hidden');
+
+            const meta = CATEGORIES_META[category];
+            const catProg = userProgress[category] || { unlocked: 1, stars: {} };
+            const levels = LEVELS_DATA[category];
+
+            document.getElementById('map-category-title').textContent = meta.name;
+            const catStars = Object.values(catProg.stars || {}).reduce((sum, s) => sum + s, 0);
+            document.getElementById('map-stars-badge').innerHTML = `<i class="fa-solid fa-star text-amber-500"></i> ${catStars} / 45`;
+
+            const grid = document.getElementById('levels-grid');
+            grid.innerHTML = '';
+
+            levels.forEach((lvlObj) => {
+                const lvlNum = lvlObj.level;
+                const isUnlocked = lvlNum <= catProg.unlocked;
+                const earnedStars = (catProg.stars && catProg.stars[lvlNum]) || 0;
+
+                // Цветовая метка сложности
+                let diffBorder = 'border-emerald-200';
+                let diffBadge = 'bg-emerald-100 text-emerald-700';
+                if (lvlNum >= 6 && lvlNum <= 10) {
+                    diffBorder = 'border-amber-200';
+                    diffBadge = 'bg-amber-100 text-amber-700';
+                } else if (lvlNum >= 11) {
+                    diffBorder = 'border-rose-200';
+                    diffBadge = 'bg-rose-100 text-rose-700';
+                }
+
+                const card = document.createElement('button');
+                if (isUnlocked) {
+                    card.className = `group relative flex flex-col items-center justify-between p-2.5 sm:p-3 rounded-2xl border-2 ${earnedStars > 0 ? 'border-amber-400 bg-amber-50/40' : `${diffBorder} bg-white`} hover:border-indigo-500 hover:shadow-md transition-all transform hover:-translate-y-0.5 text-center`;
+                    card.onclick = () => startLevel(category, lvlNum);
+
+                    // Звёздочки уровня
+                    let starsHtml = '<div class="flex gap-0.5 text-[10px] sm:text-xs mt-1.5">';
+                    for (let s = 1; s <= 3; s++) {
+                        starsHtml += s <= earnedStars
+                            ? '<i class="fa-solid fa-star text-amber-400"></i>'
+                            : '<i class="fa-solid fa-star text-slate-200"></i>';
+                    }
+                    starsHtml += '</div>';
+
+                    card.innerHTML = `
+                        <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl ${earnedStars > 0 ? 'bg-amber-400 text-white' : diffBadge} font-display font-extrabold text-sm sm:text-base flex items-center justify-center mb-1">
+                            ${lvlNum}
+                        </span>
+                        <span class="text-[10px] sm:text-[11px] font-semibold text-slate-700 line-clamp-2 leading-tight min-h-[26px] flex items-center justify-center">
+                            ${lvlObj.title}
+                        </span>
+                        ${starsHtml}
+                    `;
+                } else {
+                    card.disabled = true;
+                    card.className = 'flex flex-col items-center justify-between p-2.5 sm:p-3 rounded-2xl border-2 border-slate-100 bg-slate-50/80 opacity-65 cursor-not-allowed text-center';
+                    card.innerHTML = `
+                        <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-200 text-slate-400 font-display font-bold text-xs sm:text-sm flex items-center justify-center mb-1">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <span class="text-[10px] sm:text-[11px] font-medium text-slate-400 line-clamp-2 leading-tight min-h-[26px] flex items-center justify-center">
+                            Уровень ${lvlNum}
+                        </span>
+                        <div class="flex gap-0.5 text-[10px] sm:text-xs mt-1.5 text-slate-200">
+                            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                        </div>
+                    `;
+                }
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Запуск конкретного уровня
+        function startLevel(category, levelNum) {
+            playSound('click');
+            const levelData = LEVELS_DATA[category].find(l => l.level === levelNum);
+            if (!levelData) return;
+
+            gameState.category = category;
+            gameState.levelNum = levelNum;
+            gameState.questions = levelData.questions;
+            gameState.currentIndex = 0;
+            gameState.score = 0;
+            gameState.lives = 3;
+            gameState.combo = 0;
+            gameState.maxCombo = 0;
+            gameState.correctAnswers = 0;
+            gameState.totalTimeSpent = 0;
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('map-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+
+            updateHUD();
+            renderQuestion();
+        }
+
+        // Обновление верхней панели во время уровня
+        function updateHUD() {
+            const livesContainer = document.getElementById('lives-container');
+            livesContainer.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const heart = document.createElement('i');
+                heart.className = i < gameState.lives
+                    ? 'fa-solid fa-heart text-rose-500 transition-transform scale-100'
+                    : 'fa-regular fa-heart text-slate-300 transition-transform scale-90';
+                livesContainer.appendChild(heart);
+            }
+
+            document.getElementById('level-badge').textContent = `Уровень ${gameState.levelNum}`;
+
+            const comboBadge = document.getElementById('combo-badge');
+            if (gameState.combo >= 2) {
+                comboBadge.classList.remove('hidden');
+                comboBadge.textContent = `🔥 x${gameState.combo}`;
+            } else {
+                comboBadge.classList.add('hidden');
+            }
+
+            document.getElementById('score-display').textContent = gameState.score;
+
+            const levelData = LEVELS_DATA[gameState.category].find(l => l.level === gameState.levelNum);
+            const total = gameState.questions.length;
+            const current = gameState.currentIndex + 1;
+            document.getElementById('category-label').textContent = `${CATEGORIES_META[gameState.category].name} • ${levelData.title}`;
+            document.getElementById('question-counter').textContent = `Задание ${current} из ${total}`;
+            document.getElementById('progress-bar').style.width = `${(current / total) * 100}%`;
+        }
+
+        // Отрисовка задания уровня
+        function renderQuestion() {
+            gameState.isAnswered = false;
+            const qData = gameState.questions[gameState.currentIndex];
+
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.classList.add('hidden');
+
+            const qBox = document.getElementById('question-box');
+            qBox.classList.remove('animate-pop-in');
+            void qBox.offsetWidth;
+            qBox.classList.add('animate-pop-in');
+
+            document.getElementById('question-type-tag').textContent = QUESTION_TYPE_LABELS[qData.type] || '💡 Задание';
+            document.getElementById('question-text').textContent = qData.q;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            const letters = ['А', 'Б', 'В', 'Г'];
+
+            qData.options.forEach((optText, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full p-3.5 sm:p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-indigo-400 hover:bg-indigo-50/40 text-left flex items-center gap-3.5 font-medium text-slate-800 text-sm sm:text-base';
+                btn.innerHTML = `
+                    <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 font-display font-bold flex items-center justify-center shrink-0 transition-colors">
+                        ${letters[index]}
+                    </span>
+                    <span class="flex-1">${optText}</span>
+                `;
+                btn.onclick = () => handleAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            startTimer();
+        }
+
+        // Таймер (немного ускоряется на высоких уровнях 11-15)
+        function getLevelTimeLimit() {
+            if (gameState.levelNum >= 11) return 16;
+            if (gameState.levelNum >= 6) return 18;
+            return 20;
+        }
+
+        function startTimer() {
+            clearInterval(gameState.timerInterval);
+            const maxTime = getLevelTimeLimit();
+            gameState.timeLeft = maxTime;
+            updateTimerUI(maxTime);
+
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft -= 0.1;
+                gameState.totalTimeSpent += 0.1;
+                if (gameState.timeLeft <= 0) {
+                    gameState.timeLeft = 0;
+                    clearInterval(gameState.timerInterval);
+                    handleTimeOut();
+                }
+                updateTimerUI(maxTime);
+            }, 100);
+        }
+
+        function updateTimerUI(maxTime) {
+            const timerText = document.getElementById('timer-text');
+            const timerBar = document.getElementById('timer-bar');
+            const timerIcon = document.getElementById('timer-icon');
+
+            const sec = Math.ceil(gameState.timeLeft);
+            timerText.textContent = sec;
+            const percent = (gameState.timeLeft / maxTime) * 100;
+            timerBar.style.width = `${percent}%`;
+
+            if (sec <= 5) {
+                timerBar.className = 'h-full bg-rose-500 transition-all duration-100 linear';
+                timerIcon.className = 'w-9 h-9 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-sm shrink-0 animate-pulse-fast';
+            } else if (sec <= 10) {
+                timerBar.className = 'h-full bg-amber-400 transition-all duration-100 linear';
+                timerIcon.className = 'w-9 h-9 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm shrink-0';
+            } else {
+                timerBar.className = 'h-full bg-emerald-500 transition-all duration-100 linear';
+                timerIcon.className = 'w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm shrink-0';
+            }
+        }
+
+        // Обработка ответа
+        function handleAnswer(selectedIndex, clickedBtn) {
+            if (gameState.isAnswered) return;
+            gameState.isAnswered = true;
+            clearInterval(gameState.timerInterval);
+
+            const qData = gameState.questions[gameState.currentIndex];
+            const isCorrect = selectedIndex === qData.correct;
+            const buttons = document.getElementById('options-container').children;
+
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].disabled = true;
+                if (i === qData.correct) {
+                    buttons[i].className = 'option-btn w-full p-3.5 sm:p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-left flex items-center gap-3.5 font-semibold text-emerald-900 text-sm sm:text-base shadow-sm';
+                    buttons[i].querySelector('span').className = 'w-8 h-8 rounded-xl bg-emerald-500 text-white font-display font-bold flex items-center justify-center shrink-0';
+                    buttons[i].innerHTML += '<i class="fa-solid fa-circle-check text-emerald-500 text-xl"></i>';
+                }
+            }
+
+            if (isCorrect) {
+                playSound('correct');
+                gameState.correctAnswers++;
+                gameState.combo++;
+                if (gameState.combo > gameState.maxCombo) {
+                    gameState.maxCombo = gameState.combo;
+                }
+
+                const timeBonus = Math.round(gameState.timeLeft * 6);
+                const comboMultiplier = gameState.combo >= 2 ? 1 + (gameState.combo - 1) * 0.25 : 1;
+                const earned = Math.round((100 + timeBonus) * comboMultiplier);
+                gameState.score += earned;
+
+                showFeedback(true, `Отлично! +${earned} очков`, qData.explanation);
+            } else {
+                playSound('wrong');
+                gameState.combo = 0;
+                gameState.lives--;
+
+                clickedBtn.className = 'option-btn w-full p-3.5 sm:p-4 rounded-2xl border-2 border-rose-500 bg-rose-50 text-left flex items-center gap-3.5 font-semibold text-rose-900 text-sm sm:text-base animate-shake';
+                clickedBtn.querySelector('span').className = 'w-8 h-8 rounded-xl bg-rose-500 text-white font-display font-bold flex items-center justify-center shrink-0';
+                clickedBtn.innerHTML += '<i class="fa-solid fa-circle-xmark text-rose-500 text-xl"></i>';
+
+                showFeedback(false, 'Ошибка! Минус одна жизнь', qData.explanation);
+            }
+
+            updateHUD();
+        }
+
+        // Время вышло
+        function handleTimeOut() {
+            if (gameState.isAnswered) return;
+            gameState.isAnswered = true;
+            playSound('wrong');
+
+            gameState.combo = 0;
+            gameState.lives--;
+
+            const qData = gameState.questions[gameState.currentIndex];
+            const buttons = document.getElementById('options-container').children;
+
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].disabled = true;
+                if (i === qData.correct) {
+                    buttons[i].className = 'option-btn w-full p-3.5 sm:p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-left flex items-center gap-3.5 font-semibold text-emerald-900 text-sm sm:text-base';
+                    buttons[i].querySelector('span').className = 'w-8 h-8 rounded-xl bg-emerald-500 text-white font-display font-bold flex items-center justify-center shrink-0';
+                }
+            }
+
+            updateHUD();
+            showFeedback(false, 'Время вышло! ⏰', qData.explanation);
+        }
+
+        // Показ объяснения
+        function showFeedback(isSuccess, title, explanation) {
+            const box = document.getElementById('feedback-box');
+            const icon = document.getElementById('feedback-icon');
+            const titleEl = document.getElementById('feedback-title');
+            const expEl = document.getElementById('feedback-explanation');
+            const nextBtn = document.getElementById('next-btn');
+
+            box.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-200', 'bg-rose-50', 'border-rose-200');
+            
+            if (isSuccess) {
+                box.classList.add('bg-emerald-50/90', 'border-emerald-200');
+                icon.innerHTML = '<i class="fa-solid fa-lightbulb text-emerald-500"></i>';
+                titleEl.className = 'font-display font-bold text-base sm:text-lg mb-1 text-emerald-800';
+            } else {
+                box.classList.add('bg-rose-50/90', 'border-rose-200');
+                icon.innerHTML = '<i class="fa-solid fa-book-open text-rose-500"></i>';
+                titleEl.className = 'font-display font-bold text-base sm:text-lg mb-1 text-rose-800';
+            }
+
+            titleEl.textContent = title;
+            expEl.textContent = explanation;
+
+            const isLastQuestion = gameState.currentIndex >= gameState.questions.length - 1;
+            const isOutOfLives = gameState.lives <= 0;
+
+            if (isOutOfLives || isLastQuestion) {
+                nextBtn.innerHTML = '<span>Завершить уровень</span> <i class="fa-solid fa-flag-checkered"></i>';
+            } else {
+                nextBtn.innerHTML = '<span>Следующее задание</span> <i class="fa-solid fa-arrow-right"></i>';
+            }
+        }
+
+        // Следующее задание
+        function nextQuestion() {
+            playSound('click');
+            if (gameState.lives <= 0 || gameState.currentIndex >= gameState.questions.length - 1) {
+                endLevel();
+                return;
+            }
+            gameState.currentIndex++;
+            updateHUD();
+            renderQuestion();
+        }
+
+        // Завершение уровня, расчёт 1-3 звёзд и разблокировка следующего
+        function endLevel() {
+            clearInterval(gameState.timerInterval);
+
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+
+            const totalQ = gameState.questions.length;
+            const accuracy = Math.round((gameState.correctAnswers / totalQ) * 100);
+            const isPassed = gameState.lives > 0 && gameState.correctAnswers >= 2; // Нужно минимум 2 из 3 правильных ответа
+
+            // Расчёт звёзд (1-3)
+            let earnedStars = 0;
+            if (isPassed) {
+                playSound('win');
+                if (gameState.correctAnswers === totalQ && gameState.score >= 450) {
+                    earnedStars = 3; // Все ответы верны + высокая скорость
+                } else if (gameState.correctAnswers === totalQ || accuracy >= 67 && gameState.score >= 320) {
+                    earnedStars = 2;
+                } else {
+                    earnedStars = 1;
+                }
+
+                // Сохранение прогресса и разблокировка следующего уровня
+                const catProg = userProgress[gameState.category];
+                const prevStars = catProg.stars[gameState.levelNum] || 0;
+                if (earnedStars > prevStars) {
+                    catProg.stars[gameState.levelNum] = earnedStars;
+                }
+                if (gameState.levelNum < 15 && catProg.unlocked <= gameState.levelNum) {
+                    catProg.unlocked = gameState.levelNum + 1;
+                }
+                saveProgress();
+                updateMenuStats();
+            } else {
+                playSound('wrong');
+            }
+
+            // Отрисовка звёзд с анимацией
+            for (let s = 1; s <= 3; s++) {
+                const starEl = document.getElementById(`star-${s}`);
+                starEl.className = s <= earnedStars
+                    ? 'fa-solid fa-star text-amber-400 drop-shadow-md transform scale-110 transition-all duration-500'
+                    : 'fa-solid fa-star text-slate-200 transition-all duration-500';
+                if (s === 2) starEl.classList.add('text-5xl', 'sm:text-6xl', '-mt-3');
+            }
+
+            document.getElementById('end-level-badge').textContent = `Уровень ${gameState.levelNum} • ${CATEGORIES_META[gameState.category].name}`;
+            document.getElementById('final-score').textContent = gameState.score;
+            document.getElementById('final-accuracy').textContent = `${accuracy}%`;
+            document.getElementById('final-combo').textContent = `x${gameState.maxCombo}`;
+
+            const rankTitle = document.getElementById('rank-title');
+            const subtitle = document.getElementById('end-subtitle');
+            const nextLevelBtn = document.getElementById('next-level-btn');
+
+            if (isPassed) {
+                if (earnedStars === 3) {
+                    rankTitle.textContent = 'Блестяще! 3 звезды! 🌟';
+                    subtitle.textContent = 'Идеальная точность и молниеносная реакция!';
+                } else if (earnedStars === 2) {
+                    rankTitle.textContent = 'Отличная работа! 👏';
+                    subtitle.textContent = 'Уровень пройден! Можешь переиграть на 3 звезды или идти дальше.';
+                } else {
+                    rankTitle.textContent = 'Уровень пройден! ✅';
+                    subtitle.textContent = 'Следующий уровень открыт! Отвечай быстрее, чтобы собрать все 3 звезды.';
+                }
+
+                if (gameState.levelNum < 15) {
+                    nextLevelBtn.classList.remove('hidden');
+                } else {
+                    nextLevelBtn.classList.add('hidden');
+                    subtitle.textContent = 'Поздравляем! Ты прошёл финальный 15-й уровень этой категории!';
+                }
+            } else {
+                rankTitle.textContent = 'Уровень не пройден 😔';
+                subtitle.textContent = 'Для победы нужно ответить минимум на 2 из 3 заданий. Попробуй снова!';
+                nextLevelBtn.classList.add('hidden');
+            }
+        }
+
+        function startNextLevel() {
+            if (gameState.levelNum < 15) {
+                startLevel(gameState.category, gameState.levelNum + 1);
+            }
+        }
+
+        function restartCurrentLevel() {
+            startLevel(gameState.category, gameState.levelNum);
+        }
+
+        function exitLevelToMap() {
+            clearInterval(gameState.timerInterval);
+            openLevelMap(gameState.category);
+        }
+
+        function goToMenu() {
+            playSound('click');
+            clearInterval(gameState.timerInterval);
+            updateMenuStats();
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('map-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        // Инициализация статистики при загрузке страницы
+        updateMenuStats();
+    </script>
+</body>
+</html>
